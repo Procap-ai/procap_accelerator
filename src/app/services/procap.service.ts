@@ -60,7 +60,7 @@ export interface ProcapJobResults {
 @Injectable({ providedIn: 'root' })
 export class ProcapService {
   private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = 'https://api.lokaai.in';
+  readonly apiBaseUrl = 'https://api.lokaai.in';
 
   getLimits(): Observable<ProcapLimits> {
     return this.http.get<ProcapLimits>(`${this.apiBaseUrl}/procap/limits`);
@@ -99,5 +99,13 @@ export class ProcapService {
 
   getJobResults(jobId: string): Observable<ProcapJobResults> {
     return this.http.get<ProcapJobResults>(`${this.apiBaseUrl}/procap/jobs/${jobId}/results`);
+  }
+
+  getDownloadUrl(jobId: string): string {
+    return `${this.apiBaseUrl}/procap/jobs/${jobId}/download`;
+  }
+
+  getScreenshotUrl(pageUrl: string): string {
+    return `${this.apiBaseUrl}/procap/screenshot?url=${encodeURIComponent(pageUrl)}`;
   }
 }

@@ -30,6 +30,9 @@
         <button type="button" class="ghost-button" (click)="copyJobLink()">
           {{ copiedKey === 'job-link' ? 'Copied!' : 'Copy link' }}
         </button>
+        <a *ngIf="hasResults" [href]="downloadUrl" class="download-btn" download>
+          ⬇ Download Results
+        </a>
       </div>
     </section>
 
@@ -85,8 +88,9 @@
         </button>
       </section>
 
+      <!-- Analysis tab -->
       <section *ngIf="activeResultTab === 'analysis'" class="result-panel analysis-panel">
-        <article class="premium-card summary-card">
+        <article class="premium-card summary-card" *ngIf="analysisSummary">
           <span class="eyebrow">Summary</span>
           <p>{{ analysisSummary }}</p>
         </article>
@@ -109,74 +113,114 @@
             <div class="finding-group">
               <h3>🐛 Bugs</h3>
               <ul>
-                <li *ngFor="let bug of page.bugs">🐛 {{ bug }}</li>
-                <li *ngIf="page.bugs.length === 0">No bugs were returned for this page.</li>
+                <li *ngFor="let bug of page.bugs">{{ bug }}</li>
+                <li *ngIf="page.bugs.length === 0">No bugs identified on this page.</li>
               </ul>
             </div>
 
             <div class="finding-group improvements">
               <h3>💡 Improvements</h3>
               <ul>
-                <li *ngFor="let improvement of page.improvements">💡 {{ improvement }}</li>
-                <li *ngIf="page.improvements.length === 0">No improvement suggestions were returned for this page.</li>
+                <li *ngFor="let improvement of page.improvements">{{ improvement }}</li>
+                <li *ngIf="page.improvements.length === 0">No improvement suggestions for this page.</li>
               </ul>
             </div>
           </div>
         </article>
       </section>
 
+      <!-- Playwright tab -->
       <section *ngIf="activeResultTab === 'playwright'" class="result-panel">
-        <article class="premium-card code-card">
-          <div class="section-header code-header">
-            <div>
-              <span class="eyebrow">Playwright output</span>
-              <h2>playwright_test.spec.ts</h2>
-            </div>
-            <div class="code-actions">
-              <button type="button" class="ghost-button" (click)="copyCode('playwright')">
-                {{ copiedKey === 'playwright' ? 'Copied!' : 'Copy' }}
-              </button>
-              <button
-                type="button"
-                class="ghost-button"
-                (click)="downloadCode('playwright_test.spec.ts', jobResults?.playwright_test ?? '')"
-              >
-                Download
-              </button>
-            </div>
-          </div>
-
-          <pre><code class="code-block" [innerHTML]="playwrightMarkup"></code></pre>
+        <article class="premium-card instructions-card" *ngIf="!hasPlaywright">
+          <p class="no-output">The Playwright test file was not generated. Download the ZIP to see what was produced.</p>
         </article>
+
+        <ng-container *ngIf="hasPlaywright">
+          <article class="premium-card instructions-card">
+            <div class="instructions-header">
+              <div>
+                <span class="eyebrow">Playwright TypeScript Test</span>
+                <h2>How to run the tests</h2>
+              </div>
+              <a [href]="downloadUrl" class="download-btn" download>⬇ Download ZIP</a>
+            </div>
+
+            <ol class="run-steps">
+              <li>
+                <strong>Install Node.js 18+</strong> — <a href="https://nodejs.org" target="_blank" rel="noreferrer">nodejs.org</a>
+              </li>
+              <li>
+                <strong>Create a new Playwright project:</strong>
+                <code class="cmd">npm init playwright@latest</code>
+              </li>
+              <li>
+                <strong>Extract the ZIP</strong> and copy <code class="inline-code">playwright_test.spec.ts</code> into the <code class="inline-code">tests/</code> folder.
+              </li>
+              <li>
+                <strong>Run the tests:</strong>
+                <code class="cmd">npx playwright test playwright_test.spec.ts</code>
+              </li>
+              <li>
+                <strong>View the HTML report:</strong>
+                <code class="cmd">npx playwright show-report</code>
+              </li>
+            </ol>
+
+            <div class="info-tip">
+              💡 The test uses <code class="inline-code">@playwright/test</code> with no extra dependencies. Run on any machine with Node.js 18+.
+            </div>
+          </article>
+        </ng-container>
       </section>
 
+      <!-- mabl tab -->
       <section *ngIf="activeResultTab === 'mabl'" class="result-panel">
-        <article class="info-banner premium-card">
-          ℹ️ Replace MABL_API_KEY and MABL_APP_ID in the script before running.
+        <article class="premium-card instructions-card" *ngIf="!hasMabl">
+          <p class="no-output">The mabl script was not generated. Download the ZIP to see what was produced.</p>
         </article>
 
-        <article class="premium-card code-card">
-          <div class="section-header code-header">
-            <div>
-              <span class="eyebrow">mabl automation</span>
-              <h2>create_mabl_tests.sh</h2>
+        <ng-container *ngIf="hasMabl">
+          <article class="premium-card instructions-card">
+            <div class="instructions-header">
+              <div>
+                <span class="eyebrow">mabl Integration Script</span>
+                <h2>How to use the mabl script</h2>
+              </div>
+              <a [href]="downloadUrl" class="download-btn" download>⬇ Download ZIP</a>
             </div>
-            <div class="code-actions">
-              <button type="button" class="ghost-button" (click)="copyCode('mabl')">
-                {{ copiedKey === 'mabl' ? 'Copied!' : 'Copy' }}
-              </button>
-              <button
-                type="button"
-                class="ghost-button"
-                (click)="downloadCode('create_mabl_tests.sh', jobResults?.mabl_script ?? '')"
-              >
-                Download
-              </button>
-            </div>
-          </div>
 
-          <pre><code class="code-block" [innerHTML]="mablMarkup"></code></pre>
-        </article>
+            <ol class="run-steps">
+              <li>
+                <strong>Sign up at mabl</strong> — <a href="https://app.mabl.com" target="_blank" rel="noreferrer">app.mabl.com</a> (free trial available)
+              </li>
+              <li>
+                <strong>Get your API key</strong> from <em>Settings → APIs</em> in the mabl dashboard.
+              </li>
+              <li>
+                <strong>Extract the ZIP</strong> and open <code class="inline-code">create_mabl_tests.sh</code> in a text editor.
+              </li>
+              <li>
+                <strong>Fill in your credentials:</strong>
+                <code class="cmd">MABL_API_KEY="your-api-key-here"</code>
+              </li>
+              <li>
+                <strong>Run the script:</strong>
+                <code class="cmd">chmod +x create_mabl_tests.sh && ./create_mabl_tests.sh</code>
+                <span class="step-note">This creates your app and environment in mabl and triggers a deployment event.</span>
+              </li>
+              <li>
+                <strong>Record test journeys</strong> — open <a href="https://app.mabl.com" target="_blank" rel="noreferrer">app.mabl.com</a>, find your new app, and record tests using mabl's low-code recorder.
+              </li>
+              <li>
+                <strong>Trigger test runs</strong> — re-run the script anytime to fire a deployment event and execute your linked Plans.
+              </li>
+            </ol>
+
+            <div class="info-tip">
+              💡 The script uses only <code class="inline-code">curl</code> and <code class="inline-code">python3</code> — available on macOS and Linux by default.
+            </div>
+          </article>
+        </ng-container>
       </section>
     </ng-container>
 
