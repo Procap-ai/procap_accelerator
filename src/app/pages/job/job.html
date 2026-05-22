@@ -169,24 +169,25 @@
                 <strong>Install Node.js 18+</strong> — <a href="https://nodejs.org" target="_blank" rel="noreferrer">nodejs.org</a>
               </li>
               <li>
-                <strong>Create a new Playwright project:</strong>
-                <code class="cmd">npm init playwright@latest</code>
+                <strong>Extract the ZIP</strong> and enter the folder:
+                <code class="cmd">cd procap-tests</code>
               </li>
               <li>
-                <strong>Extract the ZIP</strong> and copy <code class="inline-code">playwright_test.spec.ts</code> into the <code class="inline-code">tests/</code> folder.
+                <strong>Install dependencies &amp; browsers:</strong>
+                <code class="cmd">npm install && npx playwright install</code>
               </li>
               <li>
                 <strong>Run the tests:</strong>
-                <code class="cmd">npx playwright test playwright_test.spec.ts</code>
+                <code class="cmd">npm test</code>
               </li>
               <li>
                 <strong>View the HTML report:</strong>
-                <code class="cmd">npx playwright show-report</code>
+                <code class="cmd">npm run report</code>
               </li>
             </ol>
 
             <div class="info-tip">
-              💡 The test uses <code class="inline-code">@playwright/test</code> with no extra dependencies. Run on any machine with Node.js 18+.
+              💡 The ZIP is a complete Playwright project — <code class="inline-code">playwright.config.ts</code>, <code class="inline-code">package.json</code>, and the test in <code class="inline-code">tests/</code>. No manual setup needed.
             </div>
           </article>
         </ng-container>
@@ -216,27 +217,21 @@
                 <strong>Get your API key</strong> from <em>Settings → APIs</em> in the mabl dashboard.
               </li>
               <li>
-                <strong>Extract the ZIP</strong> and open <code class="inline-code">create_mabl_tests.sh</code> in a text editor.
-              </li>
-              <li>
-                <strong>Fill in your credentials:</strong>
+                <strong>Extract the ZIP,</strong> open <code class="inline-code">create_mabl_tests.sh</code>, and set:
                 <code class="cmd">MABL_API_KEY="your-api-key-here"</code>
               </li>
               <li>
                 <strong>Run the script:</strong>
                 <code class="cmd">chmod +x create_mabl_tests.sh && ./create_mabl_tests.sh</code>
-                <span class="step-note">This creates your app and environment in mabl and triggers a deployment event.</span>
+                <span class="step-note">Creates your app and environment in mabl, triggers a deployment event.</span>
               </li>
               <li>
-                <strong>Record test journeys</strong> — open <a href="https://app.mabl.com" target="_blank" rel="noreferrer">app.mabl.com</a>, find your new app, and record tests using mabl's low-code recorder.
-              </li>
-              <li>
-                <strong>Trigger test runs</strong> — re-run the script anytime to fire a deployment event and execute your linked Plans.
+                <strong>Record test journeys</strong> in the mabl web app and link them to a Plan.
               </li>
             </ol>
 
             <div class="info-tip">
-              💡 The script uses only <code class="inline-code">curl</code> and <code class="inline-code">python3</code> — available on macOS and Linux by default.
+              💡 The ZIP also includes a <code class="inline-code">README.md</code> with full setup instructions. The script needs only <code class="inline-code">curl</code> and <code class="inline-code">python3</code>.
             </div>
           </article>
         </ng-container>
