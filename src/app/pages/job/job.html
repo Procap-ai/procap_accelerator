@@ -1,0 +1,188 @@
+<div class="job-page">
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="#/">
+        <img [src]="logoUrl" alt="ProCap logo">
+        <span>ProCap Accelerator</span>
+      </a>
+
+      <div class="topbar-actions">
+        <a class="home-link" href="#/">New analysis</a>
+        <a class="procap-link" href="https://procap.ai" target="_blank" rel="noreferrer">procap.ai ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell page-shell">
+    <section class="premium-card hero-card" [class.is-error]="isFailed">
+      <span class="eyebrow" *ngIf="!hasResults && !isFailed">{{ jobStatus?.status === 'done' ? 'Finalizing deliverables' : 'Processing job' }}</span>
+      <span class="eyebrow success" *ngIf="hasResults">Analysis ready</span>
+      <span class="eyebrow error" *ngIf="isFailed">Job failed</span>
+
+      <h1 *ngIf="hasResults">✅ Analysis Complete</h1>
+      <h1 *ngIf="!hasResults && !isFailed">{{ jobStatus?.status === 'done' ? 'Finalizing results...' : 'Analyzing...' }}</h1>
+      <h1 *ngIf="isFailed">Analysis failed</h1>
+
+      <p class="target-label">{{ displayTarget }}</p>
+
+      <div class="job-meta">
+        <span>Job ID: {{ jobId }}</span>
+        <button type="button" class="ghost-button" (click)="copyJobLink()">
+          {{ copiedKey === 'job-link' ? 'Copied!' : 'Copy link' }}
+        </button>
+      </div>
+    </section>
+
+    <ng-container *ngIf="!hasResults && !isFailed">
+      <section class="progress-grid">
+        <article
+          class="step premium-card"
+          *ngFor="let step of steps; let index = index"
+          [class.is-complete]="stepState(index) === 'complete'"
+          [class.is-active]="stepState(index) === 'active'"
+        >
+          <span class="step-index">{{ index + 1 }}</span>
+          <div>
+            <h2>{{ step }}</h2>
+            <p *ngIf="stepState(index) === 'complete'">Completed</p>
+            <p *ngIf="stepState(index) === 'active'">In progress</p>
+            <p *ngIf="stepState(index) === 'idle'">Queued</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="premium-card log-card">
+        <div class="section-header">
+          <div>
+            <span class="eyebrow">Live progress</span>
+            <h2>Pipeline activity</h2>
+          </div>
+          <span class="status-pill">{{ jobStatus?.status || (isLoading ? 'pending' : 'running') }}</span>
+        </div>
+
+        <div class="log-feed">
+          <article class="log-entry" *ngFor="let entry of progressEntries">
+            <span class="log-icon">{{ logIcon(entry.msg) }}</span>
+            <div>
+              <p>{{ logText(entry.msg) }}</p>
+              <span *ngIf="entry.ts">{{ entry.ts | date:'short' }}</span>
+            </div>
+          </article>
+        </div>
+      </section>
+    </ng-container>
+
+    <ng-container *ngIf="hasResults">
+      <section class="result-tabs">
+        <button type="button" [class.active]="activeResultTab === 'analysis'" (click)="setActiveTab('analysis')">
+          📊 Page Analysis
+        </button>
+        <button type="button" [class.active]="activeResultTab === 'playwright'" (click)="setActiveTab('playwright')">
+          🎭 Playwright Tests
+        </button>
+        <button type="button" [class.active]="activeResultTab === 'mabl'" (click)="setActiveTab('mabl')">
+          🔧 mabl Script
+        </button>
+      </section>
+
+      <section *ngIf="activeResultTab === 'analysis'" class="result-panel analysis-panel">
+        <article class="premium-card summary-card">
+          <span class="eyebrow">Summary</span>
+          <p>{{ analysisSummary }}</p>
+        </article>
+
+        <article class="premium-card empty-card" *ngIf="analysisPages.length === 0">
+          Page-level findings will appear here once the API returns page data.
+        </article>
+
+        <article class="premium-card page-card" *ngFor="let page of analysisPages">
+          <div class="page-visual" *ngIf="page.url">
+            <img [src]="screenshotUrl(page.url)" [alt]="page.title + ' preview'" loading="lazy">
+          </div>
+
+          <div class="page-details">
+            <div class="page-heading">
+              <h2>{{ page.title }}</h2>
+              <a *ngIf="page.url" [href]="page.url" target="_blank" rel="noreferrer">{{ page.url }}</a>
+            </div>
+
+            <div class="finding-group">
+              <h3>🐛 Bugs</h3>
+              <ul>
+                <li *ngFor="let bug of page.bugs">🐛 {{ bug }}</li>
+                <li *ngIf="page.bugs.length === 0">No bugs were returned for this page.</li>
+              </ul>
+            </div>
+
+            <div class="finding-group improvements">
+              <h3>💡 Improvements</h3>
+              <ul>
+                <li *ngFor="let improvement of page.improvements">💡 {{ improvement }}</li>
+                <li *ngIf="page.improvements.length === 0">No improvement suggestions were returned for this page.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section *ngIf="activeResultTab === 'playwright'" class="result-panel">
+        <article class="premium-card code-card">
+          <div class="section-header code-header">
+            <div>
+              <span class="eyebrow">Playwright output</span>
+              <h2>playwright_test.spec.ts</h2>
+            </div>
+            <div class="code-actions">
+              <button type="button" class="ghost-button" (click)="copyCode('playwright')">
+                {{ copiedKey === 'playwright' ? 'Copied!' : 'Copy' }}
+              </button>
+              <button
+                type="button"
+                class="ghost-button"
+                (click)="downloadCode('playwright_test.spec.ts', jobResults?.playwright_test ?? '')"
+              >
+                Download
+              </button>
+            </div>
+          </div>
+
+          <pre><code class="code-block" [innerHTML]="playwrightMarkup"></code></pre>
+        </article>
+      </section>
+
+      <section *ngIf="activeResultTab === 'mabl'" class="result-panel">
+        <article class="info-banner premium-card">
+          ℹ️ Replace MABL_API_KEY and MABL_APP_ID in the script before running.
+        </article>
+
+        <article class="premium-card code-card">
+          <div class="section-header code-header">
+            <div>
+              <span class="eyebrow">mabl automation</span>
+              <h2>create_mabl_tests.sh</h2>
+            </div>
+            <div class="code-actions">
+              <button type="button" class="ghost-button" (click)="copyCode('mabl')">
+                {{ copiedKey === 'mabl' ? 'Copied!' : 'Copy' }}
+              </button>
+              <button
+                type="button"
+                class="ghost-button"
+                (click)="downloadCode('create_mabl_tests.sh', jobResults?.mabl_script ?? '')"
+              >
+                Download
+              </button>
+            </div>
+          </div>
+
+          <pre><code class="code-block" [innerHTML]="mablMarkup"></code></pre>
+        </article>
+      </section>
+    </ng-container>
+
+    <section class="premium-card failure-card" *ngIf="isFailed">
+      <p>{{ errorMessage || 'The job failed before results were available.' }}</p>
+      <button type="button" class="primary-button" (click)="retry()">Try Again</button>
+    </section>
+  </main>
+</div>

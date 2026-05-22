@@ -1,0 +1,150 @@
+<div class="home-page">
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="#/">
+        <img [src]="logoUrl" alt="ProCap logo">
+        <span>ProCap Accelerator</span>
+      </a>
+
+      <div class="topbar-actions">
+        <span class="ai-badge">Powered by AI</span>
+        <a class="procap-link" href="https://procap.ai" target="_blank" rel="noreferrer">
+          procap.ai ↗
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="shell hero-inner">
+      <span class="hero-label">Enterprise QA intelligence</span>
+      <h1>AI-Powered QA Acceleration</h1>
+      <p>
+        Instant page analysis, Playwright tests, and mabl automation — for any web app.
+      </p>
+
+      <div class="hero-pills">
+        <span>🔍 Bug Detection</span>
+        <span>🎭 Playwright Tests</span>
+        <span>🔧 mabl Integration</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="shell content-shell">
+    <section class="premium-card input-card">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Launch a QA job</span>
+          <h2>Analyze Your Application</h2>
+        </div>
+        <span class="usage-pill">{{ usageLabel }}</span>
+      </div>
+
+      <div class="tab-row" role="tablist" aria-label="Input type">
+        <button type="button" [class.active]="activeTab === 'url'" (click)="setTab('url')">
+          🌐 Website URL
+        </button>
+        <button type="button" [class.active]="activeTab === 'github'" (click)="setTab('github')">
+          🐙 GitHub Repo
+        </button>
+        <button type="button" [class.active]="activeTab === 'zip'" (click)="setTab('zip')">
+          📦 Selenium Tests
+        </button>
+      </div>
+
+      <form class="analysis-form" (ngSubmit)="submit()">
+        <div class="field-group" *ngIf="activeTab === 'url'">
+          <label for="website-url">Website URL</label>
+          <input
+            id="website-url"
+            type="url"
+            name="website-url"
+            [(ngModel)]="websiteUrl"
+            placeholder="https://your-app.com"
+            autocomplete="url"
+          >
+        </div>
+
+        <div class="field-group" *ngIf="activeTab === 'github'">
+          <label for="github-url">GitHub repository</label>
+          <input
+            id="github-url"
+            type="url"
+            name="github-url"
+            [(ngModel)]="githubUrl"
+            placeholder="https://github.com/owner/repo"
+            autocomplete="url"
+          >
+        </div>
+
+        <div class="field-group" *ngIf="activeTab === 'zip'">
+          <label>Selenium test archive</label>
+          <input #zipInput class="visually-hidden" type="file" accept=".zip" (change)="onFileInputChange($event)">
+          <button
+            type="button"
+            class="upload-dropzone"
+            [class.is-dragover]="isDragOver"
+            (click)="zipInput.click()"
+            (dragover)="handleDragOver($event)"
+            (dragleave)="handleDragLeave($event)"
+            (drop)="handleDrop($event)"
+          >
+            <span class="upload-title">Drop your Selenium ZIP here</span>
+            <span class="upload-copy">or click to browse your files</span>
+            <span class="upload-file" *ngIf="selectedFile as file">{{ file.name }}</span>
+          </button>
+          <button type="button" class="clear-file" *ngIf="selectedFile" (click)="clearFile()">Clear file</button>
+        </div>
+
+        <div class="field-group">
+          <label for="notes">Additional context (optional)</label>
+          <textarea
+            id="notes"
+            name="notes"
+            [(ngModel)]="notes"
+            rows="5"
+            placeholder="Test credentials, specific pages to analyze, or notes for the AI..."
+          ></textarea>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
+        <button class="submit-button" type="submit" [disabled]="submitDisabled">
+          <span class="spinner" *ngIf="isSubmitting"></span>
+          <span>{{ submitLabel }}</span>
+        </button>
+      </form>
+    </section>
+
+    <section class="features-section">
+      <div class="feature-card premium-card">
+        <span class="feature-icon">📊</span>
+        <h3>Page Analysis</h3>
+        <p>AI finds bugs and UX improvements with visual context across priority pages.</p>
+      </div>
+
+      <div class="feature-card premium-card">
+        <span class="feature-icon">🎭</span>
+        <h3>Playwright Tests</h3>
+        <p>Working TypeScript tests built to slot directly into your CI/CD pipeline.</p>
+      </div>
+
+      <div class="feature-card premium-card">
+        <span class="feature-icon">🔧</span>
+        <h3>mabl Integration</h3>
+        <p>Shell automation to provision mabl tests faster and streamline QA handoff.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <span>Powered by ProCap AI</span>
+      <span>© 2025</span>
+      <a href="https://procap.ai" target="_blank" rel="noreferrer">procap.ai</a>
+    </div>
+  </footer>
+</div>

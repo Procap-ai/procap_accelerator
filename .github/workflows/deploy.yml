@@ -1,0 +1,37 @@
+name: Deploy Angular to GitHub Pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'angular.json'
+      - 'package.json'
+      - 'tsconfig*.json'
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - name: Copy built files to repo root
+        run: |
+          cp dist/procap-accelerator/browser/index.html .
+          cp dist/procap-accelerator/browser/main.js .
+          cp dist/procap-accelerator/browser/polyfills.js .
+          cp dist/procap-accelerator/browser/styles.css .
+      - name: Commit updated build artifacts
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html main.js polyfills.js styles.css
+          git diff --quiet --exit-code --cached || git commit -m "build: update compiled Angular app [skip ci]"
+          git push
