@@ -2,8 +2,8 @@
   <header class="topbar">
     <div class="shell topbar-inner">
       <a class="brand" href="#/">
-        <img [src]="logoUrl" alt="ProCap logo">
-        <span>ProCap Accelerator</span>
+        <img [src]="logoUrl" alt="Procap logo">
+        <span>Procap Accelerator</span>
       </a>
 
       <div class="topbar-actions">
@@ -100,29 +100,48 @@
         </article>
 
         <article class="premium-card page-card" *ngFor="let page of analysisPages">
-          <div class="page-visual" *ngIf="page.url">
-            <img [src]="screenshotUrl(page.url)" [alt]="page.title + ' preview'" loading="lazy">
+          <!-- Full screenshot -->
+          <div class="page-screenshot" *ngIf="page.url">
+            <img [src]="screenshotUrl(page.url)" [alt]="page.title + ' screenshot'" loading="lazy">
           </div>
 
-          <div class="page-details">
+          <!-- Header row: title + score -->
+          <div class="page-header-row">
             <div class="page-heading">
               <h2>{{ page.title }}</h2>
               <a *ngIf="page.url" [href]="page.url" target="_blank" rel="noreferrer">{{ page.url }}</a>
             </div>
+            <div class="score-block" *ngIf="page.aesthetic_score > 0">
+              <span class="score-label">Aesthetics</span>
+              <div class="score-track">
+                <div class="score-fill" [style.width.%]="page.aesthetic_score * 10"></div>
+              </div>
+              <span class="score-value">{{ page.aesthetic_score }}<small>/10</small></span>
+            </div>
+          </div>
 
-            <div class="finding-group">
-              <h3>🐛 Bugs</h3>
+          <!-- Three-column findings -->
+          <div class="findings-grid">
+            <div class="finding-col positives-col" *ngIf="page.positives.length > 0">
+              <h3>✅ What's great</h3>
               <ul>
-                <li *ngFor="let bug of page.bugs">{{ bug }}</li>
-                <li *ngIf="page.bugs.length === 0">No bugs identified on this page.</li>
+                <li *ngFor="let p of page.positives">{{ p }}</li>
               </ul>
             </div>
 
-            <div class="finding-group improvements">
-              <h3>💡 Improvements</h3>
+            <div class="finding-col bugs-col">
+              <h3>🐛 Issues</h3>
+              <ul>
+                <li *ngFor="let bug of page.bugs">{{ bug }}</li>
+                <li *ngIf="page.bugs.length === 0" class="no-issues">No visible issues found ✓</li>
+              </ul>
+            </div>
+
+            <div class="finding-col improvements-col">
+              <h3>💡 Suggestions</h3>
               <ul>
                 <li *ngFor="let improvement of page.improvements">{{ improvement }}</li>
-                <li *ngIf="page.improvements.length === 0">No improvement suggestions for this page.</li>
+                <li *ngIf="page.improvements.length === 0" class="no-issues">Looking good already!</li>
               </ul>
             </div>
           </div>

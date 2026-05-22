@@ -11,6 +11,8 @@ type ResultTab = 'analysis' | 'playwright' | 'mabl';
 interface DisplayPage {
   title: string;
   url: string;
+  aesthetic_score: number;
+  positives: string[];
   bugs: string[];
   improvements: string[];
 }
@@ -166,7 +168,7 @@ export class JobComponent implements OnInit, OnDestroy {
   }
 
   screenshotUrl(pageUrl: string): string {
-    return this.procapService.getScreenshotUrl(pageUrl);
+    return this.procapService.getScreenshotUrl(this.jobId, pageUrl);
   }
 
   copyJobLink(): void {
@@ -248,6 +250,8 @@ export class JobComponent implements OnInit, OnDestroy {
       return {
         title: page.title?.trim() || `Page ${index + 1}`,
         url,
+        aesthetic_score: typeof page.aesthetic_score === 'number' ? Math.min(10, Math.max(0, page.aesthetic_score)) : 0,
+        positives: this.toStringArray(page.positives),
         bugs: this.toStringArray(page.bugs),
         improvements: this.toStringArray(page.improvements)
       };
@@ -336,9 +340,3 @@ export class JobComponent implements OnInit, OnDestroy {
   }
 }
 
-interface DisplayPage {
-  title: string;
-  url: string;
-  bugs: string[];
-  improvements: string[];
-}

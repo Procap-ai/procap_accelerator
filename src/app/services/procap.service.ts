@@ -39,6 +39,8 @@ export interface AnalysisPage {
   title?: string;
   url?: string;
   page_url?: string;
+  aesthetic_score?: number;
+  positives?: unknown;
   bugs?: unknown;
   improvements?: unknown;
 }
@@ -105,7 +107,12 @@ export class ProcapService {
     return `${this.apiBaseUrl}/procap/jobs/${jobId}/download`;
   }
 
-  getScreenshotUrl(pageUrl: string): string {
-    return `${this.apiBaseUrl}/procap/screenshot?url=${encodeURIComponent(pageUrl)}`;
+  getScreenshotUrl(jobId: string, pageUrl: string): string {
+    try {
+      const host = new URL(pageUrl).hostname.replace(/\./g, '-');
+      return `${this.apiBaseUrl}/procap/screenshot/${jobId}/${host}.jpeg?u=${encodeURIComponent(pageUrl)}`;
+    } catch {
+      return `${this.apiBaseUrl}/procap/screenshot/${jobId}/page.jpeg?u=${encodeURIComponent(pageUrl)}`;
+    }
   }
 }
