@@ -100,18 +100,9 @@
         </article>
 
         <article class="premium-card page-card" *ngFor="let page of analysisPages">
-          <!-- Screenshot: only for first occurrence of a URL -->
-          <div class="page-screenshot" *ngIf="page.url && !page.isDynamicState">
-            <img [src]="screenshotUrl(page.url)" [alt]="page.title + ' screenshot'" loading="lazy">
-          </div>
-
-          <!-- Dynamic-state banner: same URL as earlier page, different app state -->
-          <div class="dynamic-state-banner" *ngIf="page.isDynamicState">
-            <span class="ds-icon">🎬</span>
-            <div class="ds-text">
-              <strong>Dynamic state — captured via live browser session</strong>
-              <span>The AI agent interacted with this page and recorded the resulting UI state.</span>
-            </div>
+          <!-- Screenshot: agent-captured (same-URL dynamic states) or thum.io static -->
+          <div class="page-screenshot" *ngIf="page.url || page.screenshotFile">
+            <img [src]="screenshotUrl(page)" [alt]="page.title + ' screenshot'" loading="lazy">
           </div>
 
           <!-- Header row: title + score -->

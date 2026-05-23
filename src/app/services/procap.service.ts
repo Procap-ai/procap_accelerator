@@ -40,6 +40,7 @@ export interface AnalysisPage {
   url?: string;
   page_url?: string;
   aesthetic_score?: number;
+  screenshot_file?: string;
   positives?: unknown;
   bugs?: unknown;
   improvements?: unknown;
@@ -107,7 +108,10 @@ export class ProcapService {
     return `${this.apiBaseUrl}/procap/jobs/${jobId}/download`;
   }
 
-  getScreenshotUrl(jobId: string, pageUrl: string): string {
+  getScreenshotUrl(jobId: string, pageUrl: string, screenshotFile?: string): string {
+    if (screenshotFile) {
+      return `${this.apiBaseUrl}/procap/jobs/${jobId}/capture/${screenshotFile}`;
+    }
     try {
       const host = new URL(pageUrl).hostname.replace(/\./g, '-');
       return `${this.apiBaseUrl}/procap/screenshot/${jobId}/${host}.jpeg?u=${encodeURIComponent(pageUrl)}`;

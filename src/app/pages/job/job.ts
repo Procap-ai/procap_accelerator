@@ -15,7 +15,7 @@ interface DisplayPage {
   positives: string[];
   bugs: string[];
   improvements: string[];
-  isDynamicState: boolean;
+  screenshotFile?: string;
 }
 
 @Component({
@@ -168,8 +168,8 @@ export class JobComponent implements OnInit, OnDestroy {
     return message;
   }
 
-  screenshotUrl(pageUrl: string): string {
-    return this.procapService.getScreenshotUrl(this.jobId, pageUrl);
+  screenshotUrl(page: DisplayPage): string {
+    return this.procapService.getScreenshotUrl(this.jobId, page.url, page.screenshotFile);
   }
 
   copyJobLink(): void {
@@ -246,11 +246,8 @@ export class JobComponent implements OnInit, OnDestroy {
   }
 
   private normalizePages(pages: AnalysisPage[]): DisplayPage[] {
-    const seenUrls = new Set<string>();
     return pages.map((page, index) => {
       const url = (page.page_url ?? page.url ?? this.jobResults?.target_url ?? '').trim();
-      const isDynamicState = url !== '' && seenUrls.has(url);
-      if (url) seenUrls.add(url);
       return {
         title: page.title?.trim() || `Page ${index + 1}`,
         url,
@@ -258,7 +255,7 @@ export class JobComponent implements OnInit, OnDestroy {
         positives: this.toStringArray(page.positives),
         bugs: this.toStringArray(page.bugs),
         improvements: this.toStringArray(page.improvements),
-        isDynamicState
+        screenshotFile: page.screenshot_file?.trim() || undefined
       };
     });
   }
