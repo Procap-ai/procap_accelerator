@@ -15,6 +15,7 @@ interface DisplayPage {
   positives: string[];
   bugs: string[];
   improvements: string[];
+  isDynamicState: boolean;
 }
 
 @Component({
@@ -245,15 +246,19 @@ export class JobComponent implements OnInit, OnDestroy {
   }
 
   private normalizePages(pages: AnalysisPage[]): DisplayPage[] {
+    const seenUrls = new Set<string>();
     return pages.map((page, index) => {
       const url = (page.page_url ?? page.url ?? this.jobResults?.target_url ?? '').trim();
+      const isDynamicState = url !== '' && seenUrls.has(url);
+      if (url) seenUrls.add(url);
       return {
         title: page.title?.trim() || `Page ${index + 1}`,
         url,
         aesthetic_score: typeof page.aesthetic_score === 'number' ? Math.min(10, Math.max(0, page.aesthetic_score)) : 0,
         positives: this.toStringArray(page.positives),
         bugs: this.toStringArray(page.bugs),
-        improvements: this.toStringArray(page.improvements)
+        improvements: this.toStringArray(page.improvements),
+        isDynamicState
       };
     });
   }
