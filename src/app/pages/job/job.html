@@ -41,36 +41,53 @@
           </div>
 
           <div class="summary-url">
-            <span class="summary-label">URL</span>
+            <span class="summary-label">Testing</span>
             <a [href]="targetUrl" target="_blank" rel="noopener" class="summary-link">{{ targetUrl }}</a>
           </div>
 
           @if (instructions) {
-            <div class="summary-instructions">
-              <span class="summary-label">Instructions</span>
+            <div class="summary-request">
+              <span class="summary-label">Your Request</span>
               <p class="summary-val">{{ instructions }}</p>
             </div>
           }
 
-          @if (isRunning) {
-            <div class="summary-running">
-              <div class="skeleton"></div>
-              <div class="skeleton short"></div>
-            </div>
-          }
+          <!-- AI understanding / findings block -->
+          <div class="ai-findings-block">
+            <span class="summary-label">
+              AI Analysis
+              @if (isRunning) { <span class="ai-label-running">running...</span> }
+            </span>
+
+            @if (isRunning && !instructionsSummary && !summary) {
+              <div class="ai-thinking">
+                <span class="ai-thinking-dot"></span>
+                <span class="ai-thinking-dot"></span>
+                <span class="ai-thinking-dot"></span>
+                <span class="ai-thinking-text">Agent is browsing and analyzing...</span>
+              </div>
+            }
+
+            @if (instructionsSummary || summary) {
+              <div class="ai-findings-text">
+                @if (instructionsSummary) {
+                  <p class="ai-understanding">{{ instructionsSummary }}</p>
+                }
+                @if (summary) {
+                  <p class="ai-summary">{{ summary }}</p>
+                }
+              </div>
+            }
+          </div>
 
           @if (isDone && findings) {
             @if (score !== null) {
               <div class="score-row">
-                <span class="score-label">Overall Score</span>
+                <span class="score-label">Score</span>
                 <div class="score-badge" [class.score-good]="score >= 70" [class.score-warn]="score >= 40 && score < 70" [class.score-bad]="score < 40">
                   {{ score }}<span class="score-max">/100</span>
                 </div>
               </div>
-            }
-
-            @if (summary) {
-              <p class="summary-text">{{ summary }}</p>
             }
 
             <div class="issue-stats">
@@ -110,7 +127,9 @@
                 </div>
                 <p class="issue-desc">{{ issue.description }}</p>
                 @if (issue.screenshot) {
-                  <img [src]="captureUrl(issue.screenshot)" alt="Screenshot" class="issue-shot" loading="lazy" />
+                  <div class="shot-container">
+                    <img [src]="captureUrl(issue.screenshot)" alt="Screenshot" class="shot-img" loading="lazy" />
+                  </div>
                 }
               </div>
             }
@@ -153,12 +172,14 @@
               <div class="entry-body">
                 <p class="entry-msg">{{ entry.msg }}</p>
                 @if (entry.screenshot) {
-                  <img
-                    [src]="captureUrl(entry.screenshot)"
-                    alt="Screenshot"
-                    class="entry-shot"
-                    loading="lazy"
-                  />
+                  <div class="shot-container">
+                    <img
+                      [src]="captureUrl(entry.screenshot)"
+                      alt="Screenshot"
+                      class="shot-img"
+                      loading="lazy"
+                    />
+                  </div>
                 }
               </div>
             </div>

@@ -216,6 +216,7 @@ export class JobComponent implements OnInit, OnDestroy {
   private handleUpdate(job: ProcapJobStatus): void {
     this.status = job;
     if (job.url && !this.targetUrl) this.targetUrl = job.url;
+    if (job.instructions && !this.instructions) this.instructions = job.instructions;
     this.isLoading = false;
 
     if (job.status === 'failed') {

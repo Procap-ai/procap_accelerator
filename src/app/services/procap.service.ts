@@ -35,6 +35,7 @@ export interface ProcapJobStatus {
   job_id: string;
   status: 'pending' | 'running' | 'done' | 'failed';
   url: string;
+  instructions: string;
   progress: JobProgressEntry[];
   error?: string;
 }
