@@ -12,6 +12,8 @@ export interface JobProgressEntry {
   ts: number;
   msg: string;
   screenshot?: string;
+  source?: 'agent' | 'system';
+  analysis_update?: string;
 }
 
 export interface FindingsIssue {
@@ -26,7 +28,6 @@ export interface JobFindings {
   url: string;
   instructions_summary?: string;
   summary?: string;
-  score?: number;
   issues?: FindingsIssue[];
   positives?: string[];
 }
@@ -45,7 +46,6 @@ export interface ProcapJobResults {
   status: string;
   url: string;
   findings: JobFindings;
-  playwright_test: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -70,10 +70,6 @@ export class ProcapService {
 
   getJobResults(jobId: string): Observable<ProcapJobResults> {
     return this.http.get<ProcapJobResults>(`${this.apiBase}/procap/jobs/${jobId}/results`);
-  }
-
-  getDownloadUrl(jobId: string): string {
-    return `${this.apiBase}/procap/jobs/${jobId}/download`;
   }
 
   getCaptureUrl(jobId: string, filename: string): string {

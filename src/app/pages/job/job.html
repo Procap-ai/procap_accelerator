@@ -52,44 +52,30 @@
             </div>
           }
 
-          <!-- AI understanding / findings block -->
+          <!-- Live analysis narrative -->
           <div class="ai-findings-block">
             <span class="summary-label">
               AI Analysis
-              @if (isRunning) { <span class="ai-label-running">running...</span> }
+              @if (isRunning) { <span class="ai-label-running">live</span> }
             </span>
 
-            @if (isRunning && !instructionsSummary && !summary) {
+            @if (isRunning && !liveAnalysis) {
               <div class="ai-thinking">
                 <span class="ai-thinking-dot"></span>
                 <span class="ai-thinking-dot"></span>
                 <span class="ai-thinking-dot"></span>
-                <span class="ai-thinking-text">Agent is browsing and analyzing...</span>
+                <span class="ai-thinking-text">Procap AI Agent is starting...</span>
               </div>
             }
 
-            @if (instructionsSummary || summary) {
+            @if (liveAnalysis) {
               <div class="ai-findings-text">
-                @if (instructionsSummary) {
-                  <p class="ai-understanding">{{ instructionsSummary }}</p>
-                }
-                @if (summary) {
-                  <p class="ai-summary">{{ summary }}</p>
-                }
+                <p class="ai-summary">{{ liveAnalysis }}</p>
               </div>
             }
           </div>
 
           @if (isDone && findings) {
-            @if (score !== null) {
-              <div class="score-row">
-                <span class="score-label">Score</span>
-                <div class="score-badge" [class.score-good]="score >= 70" [class.score-warn]="score >= 40 && score < 70" [class.score-bad]="score < 40">
-                  {{ score }}<span class="score-max">/100</span>
-                </div>
-              </div>
-            }
-
             <div class="issue-stats">
               @if (highIssueCount > 0) {
                 <span class="stat-chip stat-high">{{ highIssueCount }} critical</span>
@@ -101,12 +87,6 @@
                 <span class="stat-chip stat-ok">✓ No issues found</span>
               }
             </div>
-
-            @if (hasPlaywright) {
-              <button class="btn-download" (click)="download()">
-                ⬇ Download Playwright Test
-              </button>
-            }
           }
 
           @if (isFailed) {
@@ -139,7 +119,7 @@
         <!-- Positives -->
         @if (isDone && positives.length > 0) {
           <div class="positives-section">
-            <h3 class="section-heading">✓ What\'s Working Well</h3>
+            <h3 class="section-heading">✓ What's Working Well</h3>
             <ul class="positives-list">
               @for (p of positives; track p) {
                 <li>{{ p }}</li>
@@ -152,22 +132,22 @@
       <!-- ── Work log ── -->
       <main class="worklog">
         <h2 class="worklog-title">
-          AI Work Log
+          Work Log
           @if (isRunning) {
-            <span class="worklog-hint">Live updates every few seconds</span>
+            <span class="worklog-hint">Live updates from Procap AI Agent</span>
           }
         </h2>
 
-        @if (progressEntries.length === 0 && isRunning) {
+        @if (worklogEntries.length === 0 && isRunning) {
           <div class="worklog-empty">
             <div class="spinner-sm"></div>
-            <span>Agent is starting up...</span>
+            <span>Procap AI Agent is starting up...</span>
           </div>
         }
 
         <div class="worklog-entries">
-          @for (entry of progressEntries; track entry.ts) {
-            <div class="entry" [class.entry-screenshot]="!!entry.screenshot">
+          @for (entry of worklogEntries; track entry.ts) {
+            <div class="entry" [class.entry-screenshot]="!!entry.screenshot" [class.entry-agent]="entry.source === 'agent'">
               <span class="entry-time">{{ formatTime(entry.ts) }}</span>
               <div class="entry-body">
                 <p class="entry-msg">{{ entry.msg }}</p>
@@ -195,3 +175,4 @@
     </div>
   }
 </div>
+

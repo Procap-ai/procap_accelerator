@@ -496,6 +496,16 @@
 
   &:last-child { border-bottom: none; }
   &.entry-screenshot { padding-bottom: 0.75rem; }
+
+  &.entry-agent {
+    .entry-msg {
+      color: #1e40af;
+      font-weight: 500;
+    }
+    .entry-time {
+      color: #6366f1;
+    }
+  }
 }
 
 .entry-time {

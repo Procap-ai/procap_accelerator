@@ -84,10 +84,6 @@ export class JobComponent implements OnInit, OnDestroy {
     return this.findings?.positives ?? [];
   }
 
-  get score(): number | null {
-    return this.findings?.score ?? null;
-  }
-
   get summary(): string {
     return this.findings?.summary?.trim() ?? '';
   }
@@ -96,8 +92,22 @@ export class JobComponent implements OnInit, OnDestroy {
     return this.findings?.instructions_summary?.trim() ?? '';
   }
 
+  get liveAnalysis(): string {
+    const entries = this.progressEntries;
+    // Latest analysis_update from agent, or summary when done
+    for (let i = entries.length - 1; i >= 0; i--) {
+      if (entries[i].analysis_update) return entries[i].analysis_update!;
+    }
+    return this.summary;
+  }
+
   get progressEntries(): JobProgressEntry[] {
     return this.status?.progress ?? [];
+  }
+
+  get worklogEntries(): JobProgressEntry[] {
+    // Show entries that have a meaningful msg (exclude analysis_update-only entries)
+    return this.progressEntries.filter(e => e.msg && e.msg.trim().length > 0);
   }
 
   get highIssueCount(): number {
@@ -111,14 +121,6 @@ export class JobComponent implements OnInit, OnDestroy {
   get shareUrl(): string {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     return `${origin}${window.location.pathname}#/job/${this.jobId}`;
-  }
-
-  get downloadUrl(): string {
-    return this.svc.getDownloadUrl(this.jobId);
-  }
-
-  get hasPlaywright(): boolean {
-    return !!(this.results?.playwright_test?.trim());
   }
 
   displayUrl(url: string): string {
@@ -170,13 +172,6 @@ export class JobComponent implements OnInit, OnDestroy {
       document.body.removeChild(ta);
       this.markCopied();
     }
-  }
-
-  download(): void {
-    const a = document.createElement('a');
-    a.href = this.downloadUrl;
-    a.download = `procap_${this.jobId.slice(0, 8)}.zip`;
-    a.click();
   }
 
   goHome(): void {
