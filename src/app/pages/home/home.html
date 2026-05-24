@@ -1,29 +1,56 @@
 <div class="home">
-  <header class="header">
-    <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="logo" />
+  <!-- Nav -->
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="https://procap.ai/" target="_blank" rel="noopener" class="nav-brand">
+        <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="nav-logo" />
+        <div class="nav-brand-text">
+          <span class="nav-name">Procap</span>
+          <span class="nav-tagline">AI Testing</span>
+        </div>
+      </a>
+      <a href="https://procap.ai/" target="_blank" rel="noopener" class="nav-site-link">
+        procap.ai ↗
+      </a>
+    </div>
   </header>
 
+  <!-- Hero -->
   <main class="main">
-    <div class="hero">
-      <h1 class="hero-title">AI-Powered QA Testing</h1>
-      <p class="hero-sub">Let our AI agent browse and test your website, then surface real issues — in minutes.</p>
+    <div class="hero-section">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Powered by Procap AI
+      </div>
+      <h1 class="hero-title">
+        AI that tests your<br>
+        <span class="hero-title-accent">website for you</span>
+      </h1>
+      <p class="hero-sub">
+        Enter any URL. Procap's AI agent browses your site, takes screenshots,
+        and surfaces real issues — in minutes.
+      </p>
     </div>
 
+    <!-- Card -->
     <div class="card">
       <form (ngSubmit)="submit()" #form="ngForm" novalidate>
         <div class="field">
           <label class="label" for="url">Website URL</label>
-          <input
-            id="url"
-            class="input"
-            type="url"
-            [(ngModel)]="url"
-            name="url"
-            placeholder="https://your-site.com"
-            autocomplete="off"
-            spellcheck="false"
-            [disabled]="isSubmitting"
-          />
+          <div class="input-wrap">
+            <span class="input-icon">🌐</span>
+            <input
+              id="url"
+              class="input"
+              type="url"
+              [(ngModel)]="url"
+              name="url"
+              placeholder="https://your-site.com"
+              autocomplete="off"
+              spellcheck="false"
+              [disabled]="isSubmitting"
+            />
+          </div>
         </div>
 
         <div class="field">
@@ -43,7 +70,7 @@
               [(ngModel)]="instructions"
               name="instructions"
               rows="3"
-              placeholder="e.g. Check factual issues on this page, test the login flow, look for broken links..."
+              placeholder="e.g. Check for typos, test the signup flow, look for broken links on the pricing page..."
               [disabled]="isSubmitting"
             ></textarea>
           }
@@ -59,11 +86,11 @@
           [disabled]="isSubmitting || remaining === 0"
         >
           @if (isSubmitting) {
-            <span class="spinner"></span> Starting analysis...
+            <span class="spinner"></span> Starting Procap AI...
           } @else if (remaining === 0) {
             Daily limit reached
           } @else {
-            Start AI Test &rarr;
+            <span class="btn-logo">⚡</span> Analyze with Procap AI
           }
         </button>
 
@@ -73,19 +100,33 @@
       </form>
     </div>
 
+    <!-- Features -->
     <div class="features">
       <div class="feature">
-        <span class="feature-icon">🔍</span>
-        <span>Real browser testing</span>
+        <span class="feature-icon">🤖</span>
+        <div>
+          <div class="feature-title">Real AI Agent</div>
+          <div class="feature-desc">Browses like a human tester</div>
+        </div>
       </div>
       <div class="feature">
         <span class="feature-icon">📸</span>
-        <span>Live screenshots</span>
+        <div>
+          <div class="feature-title">Live Screenshots</div>
+          <div class="feature-desc">Visual proof of every finding</div>
+        </div>
       </div>
       <div class="feature">
-        <span class="feature-icon">📊</span>
-        <span>Structured findings</span>
+        <span class="feature-icon">🎯</span>
+        <div>
+          <div class="feature-title">Focused Results</div>
+          <div class="feature-desc">Tests exactly what you ask for</div>
+        </div>
       </div>
     </div>
+
+    <p class="footer-note">
+      Part of <a href="https://procap.ai/" target="_blank" rel="noopener">Procap</a> — AI-powered QA platform
+    </p>
   </main>
 </div>
