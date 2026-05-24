@@ -1,246 +1,176 @@
 <div class="job-page">
+  <!-- Top bar -->
   <header class="topbar">
-    <div class="shell topbar-inner">
-      <a class="brand" href="#/">
-        <img [src]="logoUrl" alt="Procap logo">
-        <span>Procap Accelerator</span>
-      </a>
-
-      <div class="topbar-actions">
-        <a class="home-link" href="#/">New analysis</a>
-        <a class="procap-link" href="https://procap.ai" target="_blank" rel="noreferrer">procap.ai ↗</a>
-      </div>
+    <button class="topbar-back" (click)="goHome()">
+      <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="topbar-logo" />
+    </button>
+    <div class="topbar-url" [title]="targetUrl">{{ displayUrl(targetUrl) }}</div>
+    <div class="topbar-actions">
+      <button class="btn-ghost" (click)="copyLink()">
+        {{ copied ? '✓ Copied' : 'Share' }}
+      </button>
     </div>
   </header>
 
-  <main class="shell page-shell">
-    <section class="premium-card hero-card" [class.is-error]="isFailed">
-      <span class="eyebrow" *ngIf="!hasResults && !isFailed">{{ jobStatus?.status === 'done' ? 'Finalizing deliverables' : 'Processing job' }}</span>
-      <span class="eyebrow success" *ngIf="hasResults">Analysis ready</span>
-      <span class="eyebrow error" *ngIf="isFailed">Job failed</span>
+  <!-- Loading skeleton -->
+  @if (isLoading) {
+    <div class="loading-wrap">
+      <div class="spinner-lg"></div>
+      <p class="loading-txt">Starting analysis...</p>
+    </div>
+  }
 
-      <h1 *ngIf="hasResults">✅ Analysis Complete</h1>
-      <h1 *ngIf="!hasResults && !isFailed">{{ jobStatus?.status === 'done' ? 'Finalizing results...' : 'Analyzing...' }}</h1>
-      <h1 *ngIf="isFailed">Analysis failed</h1>
-
-      <p class="target-label">{{ displayTarget }}</p>
-
-      <div class="job-meta">
-        <span>Job ID: {{ jobId }}</span>
-        <button type="button" class="ghost-button" (click)="copyJobLink()">
-          {{ copiedKey === 'job-link' ? 'Copied!' : 'Copy link' }}
-        </button>
-        <a *ngIf="hasResults" [href]="downloadUrl" class="download-btn" download>
-          ⬇ Download Results
-        </a>
-      </div>
-    </section>
-
-    <ng-container *ngIf="!hasResults && !isFailed">
-      <section class="progress-grid">
-        <article
-          class="step premium-card"
-          *ngFor="let step of steps; let index = index"
-          [class.is-complete]="stepState(index) === 'complete'"
-          [class.is-active]="stepState(index) === 'active'"
-        >
-          <span class="step-index">{{ index + 1 }}</span>
-          <div>
-            <h2>{{ step }}</h2>
-            <p *ngIf="stepState(index) === 'complete'">Completed</p>
-            <p *ngIf="stepState(index) === 'active'">In progress</p>
-            <p *ngIf="stepState(index) === 'idle'">Queued</p>
+  @if (!isLoading) {
+    <div class="layout">
+      <!-- ── Summary card ── -->
+      <aside class="sidebar">
+        <div class="summary-card">
+          <div class="summary-header">
+            <span class="summary-title">Analysis Summary</span>
+            @if (isRunning) {
+              <span class="badge badge-running">
+                <span class="pulse"></span> Running
+              </span>
+            }
+            @if (isDone) {
+              <span class="badge badge-done">Done</span>
+            }
+            @if (isFailed) {
+              <span class="badge badge-failed">Failed</span>
+            }
           </div>
-        </article>
-      </section>
 
-      <section class="premium-card log-card">
-        <div class="section-header">
-          <div>
-            <span class="eyebrow">Live progress</span>
-            <h2>Pipeline activity</h2>
+          <div class="summary-url">
+            <span class="summary-label">URL</span>
+            <a [href]="targetUrl" target="_blank" rel="noopener" class="summary-link">{{ targetUrl }}</a>
           </div>
-          <span class="status-pill">{{ jobStatus?.status || (isLoading ? 'pending' : 'running') }}</span>
+
+          @if (instructions) {
+            <div class="summary-instructions">
+              <span class="summary-label">Instructions</span>
+              <p class="summary-val">{{ instructions }}</p>
+            </div>
+          }
+
+          @if (isRunning) {
+            <div class="summary-running">
+              <div class="skeleton"></div>
+              <div class="skeleton short"></div>
+            </div>
+          }
+
+          @if (isDone && findings) {
+            @if (score !== null) {
+              <div class="score-row">
+                <span class="score-label">Overall Score</span>
+                <div class="score-badge" [class.score-good]="score >= 70" [class.score-warn]="score >= 40 && score < 70" [class.score-bad]="score < 40">
+                  {{ score }}<span class="score-max">/100</span>
+                </div>
+              </div>
+            }
+
+            @if (summary) {
+              <p class="summary-text">{{ summary }}</p>
+            }
+
+            <div class="issue-stats">
+              @if (highIssueCount > 0) {
+                <span class="stat-chip stat-high">{{ highIssueCount }} critical</span>
+              }
+              @if (mediumIssueCount > 0) {
+                <span class="stat-chip stat-medium">{{ mediumIssueCount }} medium</span>
+              }
+              @if (issues.length === 0) {
+                <span class="stat-chip stat-ok">✓ No issues found</span>
+              }
+            </div>
+
+            @if (hasPlaywright) {
+              <button class="btn-download" (click)="download()">
+                ⬇ Download Playwright Test
+              </button>
+            }
+          }
+
+          @if (isFailed) {
+            <p class="error-msg">{{ errorMessage }}</p>
+          }
         </div>
 
-        <div class="log-feed">
-          <article class="log-entry" *ngFor="let entry of progressEntries">
-            <span class="log-icon">{{ logIcon(entry.msg) }}</span>
-            <div>
-              <p>{{ logText(entry.msg) }}</p>
-              <span *ngIf="entry.ts">{{ entry.ts | date:'short' }}</span>
+        <!-- Issues -->
+        @if (isDone && issues.length > 0) {
+          <div class="issues-section">
+            <h3 class="section-heading">Issues Found</h3>
+            @for (issue of issues; track issue.title) {
+              <div class="issue-card">
+                <div class="issue-header">
+                  <span class="issue-icon">{{ issueTypeIcon(issue.type) }}</span>
+                  <span class="issue-title">{{ issue.title }}</span>
+                  <span class="issue-sev" [ngClass]="severityClass(issue.severity)">{{ issue.severity }}</span>
+                </div>
+                <p class="issue-desc">{{ issue.description }}</p>
+                @if (issue.screenshot) {
+                  <img [src]="captureUrl(issue.screenshot)" alt="Screenshot" class="issue-shot" loading="lazy" />
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Positives -->
+        @if (isDone && positives.length > 0) {
+          <div class="positives-section">
+            <h3 class="section-heading">✓ What\'s Working Well</h3>
+            <ul class="positives-list">
+              @for (p of positives; track p) {
+                <li>{{ p }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </aside>
+
+      <!-- ── Work log ── -->
+      <main class="worklog">
+        <h2 class="worklog-title">
+          AI Work Log
+          @if (isRunning) {
+            <span class="worklog-hint">Live updates every few seconds</span>
+          }
+        </h2>
+
+        @if (progressEntries.length === 0 && isRunning) {
+          <div class="worklog-empty">
+            <div class="spinner-sm"></div>
+            <span>Agent is starting up...</span>
+          </div>
+        }
+
+        <div class="worklog-entries">
+          @for (entry of progressEntries; track entry.ts) {
+            <div class="entry" [class.entry-screenshot]="!!entry.screenshot">
+              <span class="entry-time">{{ formatTime(entry.ts) }}</span>
+              <div class="entry-body">
+                <p class="entry-msg">{{ entry.msg }}</p>
+                @if (entry.screenshot) {
+                  <img
+                    [src]="captureUrl(entry.screenshot)"
+                    alt="Screenshot"
+                    class="entry-shot"
+                    loading="lazy"
+                  />
+                }
+              </div>
             </div>
-          </article>
+          }
         </div>
-      </section>
-    </ng-container>
 
-    <ng-container *ngIf="hasResults">
-      <section class="result-tabs">
-        <button type="button" [class.active]="activeResultTab === 'analysis'" (click)="setActiveTab('analysis')">
-          📊 Page Analysis
-        </button>
-        <button type="button" [class.active]="activeResultTab === 'playwright'" (click)="setActiveTab('playwright')">
-          🎭 Playwright Tests
-        </button>
-        <button type="button" [class.active]="activeResultTab === 'mabl'" (click)="setActiveTab('mabl')">
-          🔧 mabl Script
-        </button>
-      </section>
-
-      <!-- Analysis tab -->
-      <section *ngIf="activeResultTab === 'analysis'" class="result-panel analysis-panel">
-        <article class="premium-card summary-card" *ngIf="analysisSummary">
-          <span class="eyebrow">Summary</span>
-          <p>{{ analysisSummary }}</p>
-        </article>
-
-        <article class="premium-card empty-card" *ngIf="analysisPages.length === 0">
-          Page-level findings will appear here once the API returns page data.
-        </article>
-
-        <article class="premium-card page-card" *ngFor="let page of analysisPages">
-          <!-- Screenshot: agent-captured (same-URL dynamic states) or thum.io static -->
-          <div class="page-screenshot" *ngIf="page.url || page.screenshotFile">
-            <img [src]="screenshotUrl(page)" [alt]="page.title + ' screenshot'" loading="lazy">
+        @if (isDone) {
+          <div class="worklog-done">
+            <span class="done-icon">✓</span> Analysis complete
           </div>
-
-          <!-- Header row: title + score -->
-          <div class="page-header-row">
-            <div class="page-heading">
-              <h2>{{ page.title }}</h2>
-              <a *ngIf="page.url" [href]="page.url" target="_blank" rel="noreferrer">{{ page.url }}</a>
-            </div>
-            <div class="score-block" *ngIf="page.aesthetic_score > 0">
-              <span class="score-label">Aesthetics</span>
-              <div class="score-track">
-                <div class="score-fill" [style.width.%]="page.aesthetic_score * 10"></div>
-              </div>
-              <span class="score-value">{{ page.aesthetic_score }}<small>/10</small></span>
-            </div>
-          </div>
-
-          <!-- Three-column findings -->
-          <div class="findings-grid">
-            <div class="finding-col positives-col" *ngIf="page.positives.length > 0">
-              <h3>✅ What's great</h3>
-              <ul>
-                <li *ngFor="let p of page.positives">{{ p }}</li>
-              </ul>
-            </div>
-
-            <div class="finding-col bugs-col">
-              <h3>🐛 Issues</h3>
-              <ul>
-                <li *ngFor="let bug of page.bugs">{{ bug }}</li>
-                <li *ngIf="page.bugs.length === 0" class="no-issues">No visible issues found ✓</li>
-              </ul>
-            </div>
-
-            <div class="finding-col improvements-col">
-              <h3>💡 Suggestions</h3>
-              <ul>
-                <li *ngFor="let improvement of page.improvements">{{ improvement }}</li>
-                <li *ngIf="page.improvements.length === 0" class="no-issues">Looking good already!</li>
-              </ul>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <!-- Playwright tab -->
-      <section *ngIf="activeResultTab === 'playwright'" class="result-panel">
-        <article class="premium-card instructions-card" *ngIf="!hasPlaywright">
-          <p class="no-output">The Playwright test file was not generated. Download the ZIP to see what was produced.</p>
-        </article>
-
-        <ng-container *ngIf="hasPlaywright">
-          <article class="premium-card instructions-card">
-            <div class="instructions-header">
-              <div>
-                <span class="eyebrow">Playwright TypeScript Test</span>
-                <h2>How to run the tests</h2>
-              </div>
-              <a [href]="downloadUrl" class="download-btn" download>⬇ Download ZIP</a>
-            </div>
-
-            <ol class="run-steps">
-              <li>
-                <strong>Install Node.js 18+</strong> — <a href="https://nodejs.org" target="_blank" rel="noreferrer">nodejs.org</a>
-              </li>
-              <li>
-                <strong>Extract the ZIP</strong> and enter the folder:
-                <code class="cmd">cd procap-tests</code>
-              </li>
-              <li>
-                <strong>Install dependencies &amp; browsers:</strong>
-                <code class="cmd">npm install && npx playwright install</code>
-              </li>
-              <li>
-                <strong>Run the tests:</strong>
-                <code class="cmd">npm test</code>
-              </li>
-              <li>
-                <strong>View the HTML report:</strong>
-                <code class="cmd">npm run report</code>
-              </li>
-            </ol>
-
-            <div class="info-tip">
-              💡 The ZIP is a complete Playwright project — <code class="inline-code">playwright.config.ts</code>, <code class="inline-code">package.json</code>, and the test in <code class="inline-code">tests/</code>. No manual setup needed.
-            </div>
-          </article>
-        </ng-container>
-      </section>
-
-      <!-- mabl tab -->
-      <section *ngIf="activeResultTab === 'mabl'" class="result-panel">
-        <article class="premium-card instructions-card" *ngIf="!hasMabl">
-          <p class="no-output">The mabl script was not generated. Download the ZIP to see what was produced.</p>
-        </article>
-
-        <ng-container *ngIf="hasMabl">
-          <article class="premium-card instructions-card">
-            <div class="instructions-header">
-              <div>
-                <span class="eyebrow">mabl Integration Script</span>
-                <h2>How to use the mabl script</h2>
-              </div>
-              <a [href]="downloadUrl" class="download-btn" download>⬇ Download ZIP</a>
-            </div>
-
-            <ol class="run-steps">
-              <li>
-                <strong>Sign up at mabl</strong> — <a href="https://app.mabl.com" target="_blank" rel="noreferrer">app.mabl.com</a> (free trial available)
-              </li>
-              <li>
-                <strong>Get your API key</strong> from <em>Settings → APIs</em> in the mabl dashboard.
-              </li>
-              <li>
-                <strong>Extract the ZIP,</strong> open <code class="inline-code">create_mabl_tests.sh</code>, and set:
-                <code class="cmd">MABL_API_KEY="your-api-key-here"</code>
-              </li>
-              <li>
-                <strong>Run the script:</strong>
-                <code class="cmd">chmod +x create_mabl_tests.sh && ./create_mabl_tests.sh</code>
-                <span class="step-note">Creates your app and environment in mabl, triggers a deployment event.</span>
-              </li>
-              <li>
-                <strong>Record test journeys</strong> in the mabl web app and link them to a Plan.
-              </li>
-            </ol>
-
-            <div class="info-tip">
-              💡 The ZIP also includes a <code class="inline-code">README.md</code> with full setup instructions. The script needs only <code class="inline-code">curl</code> and <code class="inline-code">python3</code>.
-            </div>
-          </article>
-        </ng-container>
-      </section>
-    </ng-container>
-
-    <section class="premium-card failure-card" *ngIf="isFailed">
-      <p>{{ errorMessage || 'The job failed before results were available.' }}</p>
-      <button type="button" class="primary-button" (click)="retry()">Try Again</button>
-    </section>
-  </main>
+        }
+      </main>
+    </div>
+  }
 </div>
