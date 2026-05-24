@@ -18,6 +18,7 @@
   <!-- Hero -->
   <main class="main">
     <div class="hero-section">
+      <div class="hero-inner">
       <div class="hero-badge">
         <span class="badge-dot"></span>
         Powered by Procap AI
@@ -30,9 +31,11 @@
         Enter any URL. Procap's AI agent browses your site, takes screenshots,
         and surfaces real issues — in minutes.
       </p>
-    </div>
+      </div><!-- /.hero-inner -->
+    </div><!-- /.hero-section -->
 
     <!-- Card -->
+    <div class="card-section">
     <div class="card">
       <form (ngSubmit)="submit()" #form="ngForm" novalidate>
         <div class="field">
@@ -98,7 +101,7 @@
           <p class="usage">{{ usageText }}</p>
         }
       </form>
-    </div>
+    </div><!-- /.card -->
 
     <!-- Features -->
     <div class="features">
@@ -128,5 +131,6 @@
     <p class="footer-note">
       Part of <a href="https://procap.ai/" target="_blank" rel="noopener">Procap</a> — AI-powered QA platform
     </p>
+    </div><!-- /.card-section -->
   </main>
 </div>
