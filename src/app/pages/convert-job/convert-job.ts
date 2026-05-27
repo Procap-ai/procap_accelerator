@@ -41,9 +41,10 @@ export class ConvertJobComponent implements OnInit, OnDestroy {
   private polling?: Subscription;
 
   pipeline: PipelineStep[] = [
-    { id: 'extract', label: 'Extract', icon: '📦', status: 'pending' },
-    { id: 'convert', label: 'Convert to Playwright', icon: '🔄', status: 'pending' },
-    { id: 'verify', label: 'Verify', icon: '✅', status: 'pending' },
+    { id: 'analyse', label: 'Analyse Selenium', icon: '📋', status: 'pending' },
+    { id: 'explore', label: 'Explore UI', icon: '🌐', status: 'pending' },
+    { id: 'convert', label: 'Generate & Verify', icon: '🔄', status: 'pending' },
+    { id: 'zip', label: 'Package ZIP', icon: '📦', status: 'pending' },
     { id: 'mabl', label: 'Create in mabl', icon: '🤖', status: 'pending' },
   ];
 
@@ -170,10 +171,11 @@ export class ConvertJobComponent implements OnInit, OnDestroy {
     const msgs = job.progress.map(e => e.msg.toLowerCase());
     const hasMsg = (kw: string) => msgs.some(m => m.includes(kw));
 
-    const extracted = hasMsg('extract') || hasMsg('identified test') || hasMsg('converting');
-    const converted = hasMsg('converted to playwright') || hasMsg('converted test');
-    const verified  = hasMsg('verification') || hasMsg('playwright mcp verification');
-    const mablDone  = hasMsg('mabl test created') || (job.status === 'done' && !!this.results?.mabl_test_id);
+    const analysed = hasMsg('step 1/5') || hasMsg('analysed selenium') || hasMsg('identified test') || hasMsg('chosen test');
+    const explored = hasMsg('step 2/5') && (hasMsg('exploration complete') || hasMsg('ui exploration complete') || hasMsg('key selectors'));
+    const converted = hasMsg('step 3/5') && (hasMsg('passed') || hasMsg('failed') || hasMsg('playwright test'));
+    const zipped   = hasMsg('step 4/5') || hasMsg('playwright_framework.zip') || hasMsg('created playwright_framework');
+    const mablDone = hasMsg('step 5/5') && hasMsg('mabl test created') || (job.status === 'done' && !!this.results?.mabl_test_id);
 
     if (job.status === 'failed') {
       this.pipeline.forEach(s => { if (s.status === 'active') s.status = 'failed'; });
@@ -182,25 +184,35 @@ export class ConvertJobComponent implements OnInit, OnDestroy {
 
     if (mablDone) {
       this.pipeline.forEach(s => (s.status = 'done'));
-    } else if (verified) {
-      this.setStep('extract', 'done');
+    } else if (zipped) {
+      this.setStep('analyse', 'done');
+      this.setStep('explore', 'done');
       this.setStep('convert', 'done');
-      this.setStep('verify', 'done');
+      this.setStep('zip', 'done');
       this.setStep('mabl', job.status === 'done' ? 'done' : 'active');
     } else if (converted) {
-      this.setStep('extract', 'done');
+      this.setStep('analyse', 'done');
+      this.setStep('explore', 'done');
       this.setStep('convert', 'done');
-      this.setStep('verify', 'active');
+      this.setStep('zip', 'active');
       this.setStep('mabl', 'pending');
-    } else if (extracted) {
-      this.setStep('extract', 'done');
+    } else if (explored) {
+      this.setStep('analyse', 'done');
+      this.setStep('explore', 'done');
       this.setStep('convert', 'active');
-      this.setStep('verify', 'pending');
+      this.setStep('zip', 'pending');
+      this.setStep('mabl', 'pending');
+    } else if (analysed) {
+      this.setStep('analyse', 'done');
+      this.setStep('explore', 'active');
+      this.setStep('convert', 'pending');
+      this.setStep('zip', 'pending');
       this.setStep('mabl', 'pending');
     } else if (job.status === 'running') {
-      this.setStep('extract', 'active');
+      this.setStep('analyse', 'active');
+      this.setStep('explore', 'pending');
       this.setStep('convert', 'pending');
-      this.setStep('verify', 'pending');
+      this.setStep('zip', 'pending');
       this.setStep('mabl', 'pending');
     }
 

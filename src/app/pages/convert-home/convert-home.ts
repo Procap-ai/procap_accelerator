@@ -22,6 +22,12 @@ export class ConvertHomeComponent {
   isSubmitting = false;
   errorMessage = '';
 
+  // mabl key validation state
+  isValidatingKeys = false;
+  keysValidated = false;
+  keysValidationError = '';
+  validatedWorkspaceName = '';
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -36,9 +42,62 @@ export class ConvertHomeComponent {
     }
   }
 
+  onMablKeyChange(): void {
+    this.keysValidated = false;
+    this.keysValidationError = '';
+    this.validatedWorkspaceName = '';
+  }
+
+  get mablKeysEntered(): boolean {
+    return !!(this.mablApiKey.trim() && this.workspaceId.trim());
+  }
+
+  get canSubmit(): boolean {
+    if (!this.selectedFile) return false;
+    if (this.showMablConfig) {
+      const hasKey = !!this.mablApiKey.trim();
+      const hasWs = !!this.workspaceId.trim();
+      // If either key field has content, both must be filled and validated
+      if (hasKey || hasWs) {
+        if (!hasKey || !hasWs || !this.keysValidated) return false;
+      }
+    }
+    return true;
+  }
+
+  validateMablKeys(): void {
+    if (!this.mablApiKey.trim() || !this.workspaceId.trim()) {
+      this.keysValidationError = 'Enter both the API key and Workspace ID to validate.';
+      return;
+    }
+    this.isValidatingKeys = true;
+    this.keysValidated = false;
+    this.keysValidationError = '';
+
+    this.svc.validateKeys(this.mablApiKey, this.workspaceId).subscribe({
+      next: (res) => {
+        this.isValidatingKeys = false;
+        if (res.valid) {
+          this.keysValidated = true;
+          this.keysValidationError = '';
+        } else {
+          this.keysValidationError = res.message || 'Validation failed. Check your keys.';
+        }
+      },
+      error: () => {
+        this.isValidatingKeys = false;
+        this.keysValidationError = 'Could not reach validation service. Try again.';
+      }
+    });
+  }
+
   submit(): void {
     if (!this.selectedFile) {
       this.errorMessage = 'Please select a Selenium project ZIP file.';
+      return;
+    }
+    if (this.showMablConfig && this.mablApiKey.trim() && !this.keysValidated) {
+      this.errorMessage = 'Please validate your mabl API keys before converting.';
       return;
     }
     this.errorMessage = '';

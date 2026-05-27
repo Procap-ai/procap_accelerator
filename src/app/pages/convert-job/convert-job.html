@@ -70,7 +70,7 @@
         <!-- AI analysis card -->
         <div class="analysis-card">
           <span class="summary-label">
-            AI Analysis
+            Agent Analysis
             @if (isRunning) { <span class="ai-live">live</span> }
           </span>
 
@@ -79,7 +79,7 @@
               <span class="ai-dot"></span>
               <span class="ai-dot"></span>
               <span class="ai-dot"></span>
-              <span class="ai-thinking-text">AI agent is starting...</span>
+              <span class="ai-thinking-text">Procap agent is starting...</span>
             </div>
           }
 
@@ -130,14 +130,14 @@
         <h2 class="worklog-title">
           Work Log
           @if (isRunning) {
-            <span class="worklog-hint">Live updates from AI agent</span>
+            <span class="worklog-hint">Live updates from Procap agent</span>
           }
         </h2>
 
         @if (worklogEntries.length === 0 && isRunning) {
           <div class="worklog-empty">
             <div class="spinner-sm"></div>
-            <span>AI agent is starting up...</span>
+            <span>Procap agent is starting up...</span>
           </div>
         }
 

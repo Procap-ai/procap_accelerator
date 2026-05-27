@@ -28,10 +28,22 @@ export interface ConvertJobResults {
   mabl_test_url: string;
 }
 
+export interface MablKeyValidation {
+  valid: boolean;
+  message?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MablConvertService {
   private readonly http = inject(HttpClient);
   readonly apiBase = 'https://api.lokaai.in';
+
+  validateKeys(apiKey: string, workspaceId: string): Observable<MablKeyValidation> {
+    const form = new FormData();
+    form.append('api_key', apiKey.trim());
+    if (workspaceId.trim()) form.append('workspace_id', workspaceId.trim());
+    return this.http.post<MablKeyValidation>(`${this.apiBase}/mabl-convert/validate-keys`, form);
+  }
 
   createJob(seleniumZip: File, mablApiKey: string, workspaceId: string): Observable<{ job_id: string }> {
     const form = new FormData();
