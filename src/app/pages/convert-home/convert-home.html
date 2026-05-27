@@ -1,0 +1,188 @@
+<div class="home">
+  <!-- Nav -->
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="https://procap.ai/" target="_blank" rel="noopener" class="nav-brand">
+        <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="nav-logo" />
+        <div class="nav-brand-text">
+          <span class="nav-name">Procap</span>
+          <span class="nav-tagline">AI Testing</span>
+        </div>
+      </a>
+      <a routerLink="/agentic-testing" class="nav-link">AI QA Tester ↗</a>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <main class="main">
+    <div class="hero-section">
+      <div class="hero-inner">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Selenium → Playwright → mabl
+        </div>
+        <h1 class="hero-title">
+          Convert Selenium tests<br>
+          <span class="hero-title-accent">automatically with AI</span>
+        </h1>
+        <p class="hero-sub">
+          Upload your Selenium project ZIP. The AI agent converts one test to Playwright,
+          verifies it works, and optionally creates a live mabl test — ready to run in CI.
+        </p>
+      </div>
+    </div>
+
+    <!-- Pipeline steps -->
+    <div class="pipeline">
+      <div class="step">
+        <span class="step-icon">📦</span>
+        <span class="step-label">Extract</span>
+      </div>
+      <span class="step-arrow">→</span>
+      <div class="step">
+        <span class="step-icon">🔄</span>
+        <span class="step-label">Convert</span>
+      </div>
+      <span class="step-arrow">→</span>
+      <div class="step">
+        <span class="step-icon">✅</span>
+        <span class="step-label">Verify</span>
+      </div>
+      <span class="step-arrow">→</span>
+      <div class="step step-optional">
+        <span class="step-icon">🤖</span>
+        <span class="step-label">mabl <span class="step-opt">(optional)</span></span>
+      </div>
+    </div>
+
+    <!-- Card -->
+    <div class="card-section">
+      <div class="card">
+        <form (ngSubmit)="submit()" novalidate>
+
+          <!-- ZIP upload -->
+          <div class="field">
+            <label class="label">Selenium Project ZIP</label>
+            <div class="upload-area" [class.upload-selected]="!!selectedFile">
+              <input
+                type="file"
+                accept=".zip"
+                class="file-input"
+                id="zip-input"
+                (change)="onFileSelected($event)"
+                [disabled]="isSubmitting"
+              />
+              <label for="zip-input" class="upload-label">
+                @if (selectedFile) {
+                  <span class="upload-icon">📦</span>
+                  <span class="upload-filename">{{ selectedFile.name }}</span>
+                  <span class="upload-change">Click to change</span>
+                } @else {
+                  <span class="upload-icon">📁</span>
+                  <span class="upload-text">Drop ZIP here or click to browse</span>
+                  <span class="upload-hint">Selenium Java or JS/TS project</span>
+                }
+              </label>
+            </div>
+          </div>
+
+          <!-- mabl config toggle -->
+          <div class="field">
+            <button
+              type="button"
+              class="toggle-btn"
+              (click)="showMablConfig = !showMablConfig"
+            >
+              <span class="toggle-icon">{{ showMablConfig ? '▾' : '▸' }}</span>
+              {{ showMablConfig ? 'Hide' : 'Configure' }} mabl integration
+              <span class="toggle-hint">(optional — creates a live mabl test)</span>
+            </button>
+
+            @if (showMablConfig) {
+              <div class="mabl-config">
+                <div class="config-field">
+                  <label class="sub-label" for="mabl-key">mabl API Key</label>
+                  <input
+                    id="mabl-key"
+                    class="input"
+                    type="password"
+                    [(ngModel)]="mablApiKey"
+                    name="mablApiKey"
+                    placeholder="e.g. Qn3uuEOjCkix9CGKxBUcqQ"
+                    autocomplete="off"
+                    [disabled]="isSubmitting"
+                  />
+                </div>
+                <div class="config-field">
+                  <label class="sub-label" for="workspace-id">Workspace ID</label>
+                  <input
+                    id="workspace-id"
+                    class="input"
+                    type="text"
+                    [(ngModel)]="workspaceId"
+                    name="workspaceId"
+                    placeholder="e.g. gV6MsPzwKxGkiBmGf1J6tA-w"
+                    autocomplete="off"
+                    [disabled]="isSubmitting"
+                  />
+                </div>
+                <p class="config-hint">
+                  API key from <strong>app.mabl.com → Settings → API Keys</strong> (Editor role or higher)
+                </p>
+              </div>
+            }
+          </div>
+
+          @if (errorMessage) {
+            <p class="error">{{ errorMessage }}</p>
+          }
+
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="isSubmitting || !selectedFile"
+          >
+            @if (isSubmitting) {
+              <span class="spinner"></span> Starting conversion...
+            } @else {
+              <span class="btn-icon">⚡</span> Convert with AI
+            }
+          </button>
+
+          <p class="note">
+            Conversion takes ~15–20 minutes. You'll see live progress as the AI works.
+          </p>
+        </form>
+      </div>
+
+      <!-- Features -->
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon">🔍</span>
+          <div>
+            <div class="feature-title">Understands Selenium POM</div>
+            <div class="feature-desc">Reads Java & JS/TS test files</div>
+          </div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">🧪</span>
+          <div>
+            <div class="feature-title">Live Verification</div>
+            <div class="feature-desc">Runs the converted test in-browser</div>
+          </div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">☁️</span>
+          <div>
+            <div class="feature-title">mabl Ready</div>
+            <div class="feature-desc">Optionally creates a cloud-run test</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">
+        Part of <a href="https://procap.ai/" target="_blank" rel="noopener">Procap</a> — AI-powered QA platform
+      </p>
+    </div>
+  </main>
+</div>

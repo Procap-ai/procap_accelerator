@@ -49,7 +49,7 @@ export class HomeComponent implements OnInit {
 
     this.procapService.createJob(url, this.instructions.trim()).subscribe({
       next: ({ job_id }) => {
-        void this.router.navigate(['/job', job_id], {
+        void this.router.navigate(['/agentic-testing/job', job_id], {
           queryParams: { target: url }
         });
       },

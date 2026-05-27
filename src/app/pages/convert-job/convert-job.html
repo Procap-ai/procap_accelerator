@@ -1,0 +1,170 @@
+<div class="job-page">
+  <!-- Top bar -->
+  <header class="topbar">
+    <button class="topbar-back" (click)="goHome()" title="Back to home">
+      <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="topbar-logo" />
+    </button>
+    <div class="topbar-title">Selenium → Playwright{{ mablTestUrl ? ' → mabl' : '' }}</div>
+    <div class="topbar-actions">
+      @if (isDone && results?.playwright_zip_path) {
+        <a [href]="downloadUrl" class="btn-download" download>⬇ Download Playwright</a>
+      }
+    </div>
+  </header>
+
+  <!-- Loading skeleton -->
+  @if (isLoading) {
+    <div class="loading-wrap">
+      <div class="spinner-lg"></div>
+      <p class="loading-txt">Starting conversion...</p>
+    </div>
+  }
+
+  @if (!isLoading) {
+    <div class="layout">
+      <!-- ── Sidebar ── -->
+      <aside class="sidebar">
+
+        <!-- Pipeline steps card -->
+        <div class="pipeline-card">
+          <div class="card-header">
+            <span class="card-title">Conversion Pipeline</span>
+            @if (isRunning) {
+              <span class="badge badge-running"><span class="pulse"></span> Running</span>
+            }
+            @if (isDone) {
+              <span class="badge badge-done">Done</span>
+            }
+            @if (isFailed) {
+              <span class="badge badge-failed">Failed</span>
+            }
+          </div>
+
+          <div class="pipeline">
+            @for (step of pipeline; track step.id) {
+              <div class="pipeline-step" [ngClass]="'step-' + step.status">
+                <div class="step-indicator">
+                  @if (step.status === 'done') {
+                    <span class="step-check">✓</span>
+                  } @else if (step.status === 'active') {
+                    <div class="step-spinner"></div>
+                  } @else if (step.status === 'failed') {
+                    <span class="step-fail">✗</span>
+                  } @else {
+                    <span class="step-dot"></span>
+                  }
+                </div>
+                <div class="step-info">
+                  <span class="step-icon">{{ step.icon }}</span>
+                  <span class="step-label">{{ step.label }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (isFailed) {
+            <p class="error-msg">{{ errorMessage }}</p>
+          }
+        </div>
+
+        <!-- AI analysis card -->
+        <div class="analysis-card">
+          <span class="summary-label">
+            AI Analysis
+            @if (isRunning) { <span class="ai-live">live</span> }
+          </span>
+
+          @if (isRunning && !liveAnalysis) {
+            <div class="ai-thinking">
+              <span class="ai-dot"></span>
+              <span class="ai-dot"></span>
+              <span class="ai-dot"></span>
+              <span class="ai-thinking-text">AI agent is starting...</span>
+            </div>
+          }
+
+          @if (liveAnalysis) {
+            <p class="analysis-text">{{ liveAnalysis }}</p>
+          }
+        </div>
+
+        <!-- Results card -->
+        @if (isDone) {
+          <div class="results-card">
+            <span class="card-title">Results</span>
+
+            @if (results?.playwright_zip_path) {
+              <div class="result-item">
+                <span class="result-icon">📁</span>
+                <div class="result-info">
+                  <span class="result-label">Playwright Framework</span>
+                  <a [href]="downloadUrl" class="result-link" download>Download ZIP ⬇</a>
+                </div>
+              </div>
+            }
+
+            @if (mablTestUrl) {
+              <div class="result-item">
+                <span class="result-icon">🤖</span>
+                <div class="result-info">
+                  <span class="result-label">mabl Test Created</span>
+                  <a [href]="mablTestUrl" target="_blank" rel="noopener" class="result-link">Open in mabl ↗</a>
+                </div>
+              </div>
+            } @else if (isDone) {
+              <div class="result-item result-skipped">
+                <span class="result-icon">🤖</span>
+                <div class="result-info">
+                  <span class="result-label">mabl</span>
+                  <span class="result-skip">Not configured — provide API key on home page</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+      </aside>
+
+      <!-- ── Work log ── -->
+      <main class="worklog">
+        <h2 class="worklog-title">
+          Work Log
+          @if (isRunning) {
+            <span class="worklog-hint">Live updates from AI agent</span>
+          }
+        </h2>
+
+        @if (worklogEntries.length === 0 && isRunning) {
+          <div class="worklog-empty">
+            <div class="spinner-sm"></div>
+            <span>AI agent is starting up...</span>
+          </div>
+        }
+
+        <div class="worklog-entries">
+          @for (entry of worklogEntries; track entry.ts) {
+            <div class="entry"
+              [class.entry-agent]="entry.source === 'agent'"
+              [class.entry-screenshot]="!!entry.screenshot">
+              <span class="entry-time">{{ formatTime(entry.ts) }}</span>
+              <div class="entry-body">
+                <p class="entry-msg">{{ entry.msg }}</p>
+                @if (entry.screenshot) {
+                  <div class="shot-container">
+                    <img [src]="captureUrl(entry.screenshot)" alt="Screenshot" class="shot-img" loading="lazy" />
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (isDone) {
+          <div class="worklog-done">
+            <span class="done-icon">✓</span> Conversion complete
+          </div>
+        }
+      </main>
+    </div>
+  }
+</div>
