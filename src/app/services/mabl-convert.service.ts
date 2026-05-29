@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, from, switchMap } from 'rxjs';
 
 export interface ConvertJobProgressEntry {
   ts: number;
@@ -45,12 +45,38 @@ export class MablConvertService {
     return this.http.post<MablKeyValidation>(`${this.apiBase}/mabl-convert/validate-keys`, form);
   }
 
+  /** Two-step upload: get presigned S3 URL → PUT file to S3 → create job */
   createJob(seleniumZip: File, mablApiKey: string, workspaceId: string): Observable<{ job_id: string }> {
-    const form = new FormData();
-    form.append('selenium_zip', seleniumZip, seleniumZip.name);
-    if (mablApiKey.trim()) form.append('mabl_api_key', mablApiKey.trim());
-    if (workspaceId.trim()) form.append('workspace_id', workspaceId.trim());
-    return this.http.post<{ job_id: string }>(`${this.apiBase}/mabl-convert/jobs`, form);
+    const urlForm = new FormData();
+    urlForm.append('filename', seleniumZip.name);
+
+    return this.http
+      .post<{ upload_url: string; s3_key: string }>(
+        `${this.apiBase}/mabl-convert/upload-url`,
+        urlForm
+      )
+      .pipe(
+        switchMap(({ upload_url, s3_key }) =>
+          from(
+            fetch(upload_url, { method: 'PUT', body: seleniumZip }).then(res => {
+              if (!res.ok) throw new Error(`S3 upload failed: ${res.status}`);
+              return s3_key;
+            })
+          ).pipe(
+            switchMap(key => {
+              const jobForm = new FormData();
+              jobForm.append('s3_key', key);
+              jobForm.append('filename', seleniumZip.name);
+              if (mablApiKey.trim()) jobForm.append('mabl_api_key', mablApiKey.trim());
+              if (workspaceId.trim()) jobForm.append('workspace_id', workspaceId.trim());
+              return this.http.post<{ job_id: string }>(
+                `${this.apiBase}/mabl-convert/jobs`,
+                jobForm
+              );
+            })
+          )
+        )
+      );
   }
 
   getJob(jobId: string): Observable<ConvertJobStatus> {

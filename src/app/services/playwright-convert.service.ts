@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, from, switchMap } from 'rxjs';
 
 export interface PwConvertProgressEntry {
   ts: number;
@@ -31,10 +31,36 @@ export class PlaywrightConvertService {
   private readonly http = inject(HttpClient);
   readonly apiBase = 'https://api.lokaai.in';
 
+  /** Two-step upload: get presigned S3 URL → PUT file to S3 → create job */
   createJob(seleniumZip: File): Observable<{ job_id: string }> {
-    const form = new FormData();
-    form.append('selenium_zip', seleniumZip, seleniumZip.name);
-    return this.http.post<{ job_id: string }>(`${this.apiBase}/playwright-convert/jobs`, form);
+    const urlForm = new FormData();
+    urlForm.append('filename', seleniumZip.name);
+
+    return this.http
+      .post<{ upload_url: string; s3_key: string }>(
+        `${this.apiBase}/playwright-convert/upload-url`,
+        urlForm
+      )
+      .pipe(
+        switchMap(({ upload_url, s3_key }) =>
+          from(
+            fetch(upload_url, { method: 'PUT', body: seleniumZip }).then(res => {
+              if (!res.ok) throw new Error(`S3 upload failed: ${res.status}`);
+              return s3_key;
+            })
+          ).pipe(
+            switchMap(key => {
+              const jobForm = new FormData();
+              jobForm.append('s3_key', key);
+              jobForm.append('filename', seleniumZip.name);
+              return this.http.post<{ job_id: string }>(
+                `${this.apiBase}/playwright-convert/jobs`,
+                jobForm
+              );
+            })
+          )
+        )
+      );
   }
 
   getJob(jobId: string): Observable<PwConvertJobStatus> {

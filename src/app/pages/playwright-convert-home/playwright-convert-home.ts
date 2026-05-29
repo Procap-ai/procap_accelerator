@@ -25,6 +25,7 @@ export class PlaywrightConvertHomeComponent {
 
   selectedFile: File | null = null;
   isSubmitting = false;
+  uploadStage = '';  // 'uploading' | 'starting' | ''
   errorMessage = '';
 
   onFileSelected(event: Event): void {
@@ -48,6 +49,7 @@ export class PlaywrightConvertHomeComponent {
     }
     this.errorMessage = '';
     this.isSubmitting = true;
+    this.uploadStage = 'uploading';
 
     this.svc.createJob(this.selectedFile).subscribe({
       next: ({ job_id }) => {
@@ -69,6 +71,7 @@ export class PlaywrightConvertHomeComponent {
         const detail = (err as { error?: { detail?: string } })?.error?.detail;
         this.errorMessage = detail ?? 'Failed to start conversion. Please try again.';
         this.isSubmitting = false;
+        this.uploadStage = '';
       }
     });
   }

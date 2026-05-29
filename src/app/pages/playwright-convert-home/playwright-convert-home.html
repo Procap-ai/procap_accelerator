@@ -61,7 +61,8 @@
 
           <button type="submit" class="btn-primary" [disabled]="isSubmitting || !selectedFile">
             @if (isSubmitting) {
-              <span class="spinner"></span> Starting conversion...
+              <span class="spinner"></span>
+              {{ uploadStage === 'uploading' ? 'Uploading ZIP...' : 'Starting conversion...' }}
             } @else {
               <span class="btn-icon">🎭</span> Convert to Playwright
             }
