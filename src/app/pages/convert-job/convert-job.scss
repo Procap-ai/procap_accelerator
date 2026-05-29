@@ -86,6 +86,16 @@
   gap: 1rem;
 }
 
+.layout-done .sidebar {
+  width: 45%;
+  flex-shrink: 0;
+}
+
+.layout-done .worklog {
+  flex: 1;
+  min-width: 0;
+}
+
 .pipeline-card, .analysis-card, .results-card {
   background: #fff;
   border: 1.5px solid #e2e8f0;

@@ -41,11 +41,10 @@ export class ConvertJobComponent implements OnInit, OnDestroy {
   private polling?: Subscription;
 
   pipeline: PipelineStep[] = [
-    { id: 'analyse', label: 'Analyse Selenium', icon: '📋', status: 'pending' },
-    { id: 'explore', label: 'Explore UI', icon: '🌐', status: 'pending' },
-    { id: 'convert', label: 'Generate & Verify', icon: '🔄', status: 'pending' },
-    { id: 'zip', label: 'Package ZIP', icon: '📦', status: 'pending' },
-    { id: 'mabl', label: 'Create in mabl', icon: '🤖', status: 'pending' },
+    { id: 'analyse',  label: 'Analyse Selenium', icon: '📋', status: 'pending' },
+    { id: 'intent',   label: 'Build Test Intent', icon: '🎯', status: 'pending' },
+    { id: 'authoring', label: 'mabl Authoring', icon: '🤖', status: 'pending' },
+    { id: 'results',  label: 'Write Results', icon: '✅', status: 'pending' },
   ];
 
   ngOnInit(): void {
@@ -171,53 +170,38 @@ export class ConvertJobComponent implements OnInit, OnDestroy {
     const msgs = job.progress.map(e => e.msg.toLowerCase());
     const hasMsg = (kw: string) => msgs.some(m => m.includes(kw));
 
-    const analysed = hasMsg('step 1/5') || hasMsg('analysed selenium') || hasMsg('identified test') || hasMsg('chosen test');
-    const explored = hasMsg('step 2/5') && (hasMsg('exploration complete') || hasMsg('ui exploration complete') || hasMsg('key selectors'));
-    const converted = hasMsg('step 3/5') && (hasMsg('passed') || hasMsg('failed') || hasMsg('playwright test'));
-    const zipped   = hasMsg('step 4/5') || hasMsg('playwright_framework.zip') || hasMsg('created playwright_framework');
-    const mablDone = hasMsg('step 5/5') && hasMsg('mabl test created') || (job.status === 'done' && !!this.results?.mabl_test_id);
+    const analysed  = hasMsg('step 1') || hasMsg('found') && hasMsg('unique test') || hasMsg('analysed selenium');
+    const intent    = hasMsg('step 2') || hasMsg('mabl authoring initiated') || hasMsg('authoring_plan');
+    const authoring = hasMsg('mabl authoring') && (hasMsg('in progress') || hasMsg('created') || hasMsg('initiated'));
+    const resultsDone = hasMsg('step 3') || hasMsg('conversion_results') || hasMsg('conversion complete');
 
     if (job.status === 'failed') {
       this.pipeline.forEach(s => { if (s.status === 'active') s.status = 'failed'; });
       return;
     }
 
-    if (mablDone) {
-      this.pipeline.forEach(s => (s.status = 'done'));
-    } else if (zipped) {
-      this.setStep('analyse', 'done');
-      this.setStep('explore', 'done');
-      this.setStep('convert', 'done');
-      this.setStep('zip', 'done');
-      this.setStep('mabl', job.status === 'done' ? 'done' : 'active');
-    } else if (converted) {
-      this.setStep('analyse', 'done');
-      this.setStep('explore', 'done');
-      this.setStep('convert', 'done');
-      this.setStep('zip', 'active');
-      this.setStep('mabl', 'pending');
-    } else if (explored) {
-      this.setStep('analyse', 'done');
-      this.setStep('explore', 'done');
-      this.setStep('convert', 'active');
-      this.setStep('zip', 'pending');
-      this.setStep('mabl', 'pending');
-    } else if (analysed) {
-      this.setStep('analyse', 'done');
-      this.setStep('explore', 'active');
-      this.setStep('convert', 'pending');
-      this.setStep('zip', 'pending');
-      this.setStep('mabl', 'pending');
-    } else if (job.status === 'running') {
-      this.setStep('analyse', 'active');
-      this.setStep('explore', 'pending');
-      this.setStep('convert', 'pending');
-      this.setStep('zip', 'pending');
-      this.setStep('mabl', 'pending');
-    }
-
-    if (job.status === 'done') {
+    if (resultsDone || job.status === 'done') {
       this.pipeline.forEach(s => { if (s.status !== 'failed') s.status = 'done'; });
+    } else if (authoring) {
+      this.setStep('analyse',  'done');
+      this.setStep('intent',   'done');
+      this.setStep('authoring','done');
+      this.setStep('results',  'active');
+    } else if (intent) {
+      this.setStep('analyse',  'done');
+      this.setStep('intent',   'done');
+      this.setStep('authoring','active');
+      this.setStep('results',  'pending');
+    } else if (analysed) {
+      this.setStep('analyse',  'done');
+      this.setStep('intent',   'active');
+      this.setStep('authoring','pending');
+      this.setStep('results',  'pending');
+    } else if (job.status === 'running') {
+      this.setStep('analyse',  'active');
+      this.setStep('intent',   'pending');
+      this.setStep('authoring','pending');
+      this.setStep('results',  'pending');
     }
   }
 

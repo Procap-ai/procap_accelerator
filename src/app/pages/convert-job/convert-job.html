@@ -21,7 +21,7 @@
   }
 
   @if (!isLoading) {
-    <div class="layout">
+    <div class="layout" [class.layout-done]="isDone">
       <!-- ── Sidebar ── -->
       <aside class="sidebar">
 
