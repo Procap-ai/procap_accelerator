@@ -1,0 +1,105 @@
+<div class="landing">
+  <!-- Nav -->
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="https://procap.ai/" target="_blank" rel="noopener" class="nav-brand">
+        <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="nav-logo" />
+        <div class="nav-brand-text">
+          <span class="nav-name">Procap</span>
+          <span class="nav-tagline">Accelerator</span>
+        </div>
+      </a>
+      <a href="https://procap.ai/" target="_blank" rel="noopener" class="nav-site-link">procap.ai ↗</a>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Hero -->
+    <div class="hero-section">
+      <div class="hero-inner">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Powered by Procap AI
+        </div>
+        <h1 class="hero-title">
+          Automate your test<br>
+          <span class="hero-title-accent">migration with AI</span>
+        </h1>
+        <p class="hero-sub">
+          Choose a conversion mode. The Procap AI agent reads your Selenium project,
+          converts all unique tests, runs them, and fixes issues automatically.
+        </p>
+      </div>
+    </div>
+
+    <!-- Mode Cards -->
+    <div class="modes-section">
+      <div class="mode-card" (click)="navigate('/playwright-convert')" role="button" tabindex="0"
+           (keydown.enter)="navigate('/playwright-convert')">
+        <div class="mode-icon">🎭</div>
+        <div class="mode-body">
+          <div class="mode-title">Selenium → Playwright</div>
+          <div class="mode-desc">
+            Convert all unique Selenium tests to Playwright TypeScript. The agent runs each test,
+            debugs failures with a live browser, and delivers a ready-to-run ZIP.
+          </div>
+          <ul class="mode-features">
+            <li>✓ All unique tests converted</li>
+            <li>✓ Live run + auto-fix</li>
+            <li>✓ Playwright MCP debugging</li>
+            <li>✓ Download full project ZIP</li>
+          </ul>
+        </div>
+        <div class="mode-cta">
+          <button class="btn-mode btn-playwright">Convert to Playwright ↗</button>
+        </div>
+      </div>
+
+      <div class="mode-card" (click)="navigate('/mabl-convert')" role="button" tabindex="0"
+           (keydown.enter)="navigate('/mabl-convert')">
+        <div class="mode-icon">🤖</div>
+        <div class="mode-body">
+          <div class="mode-title">Selenium → mabl</div>
+          <div class="mode-desc">
+            Convert Selenium tests to mabl cloud tests. The agent explores the UI, creates tests
+            in parallel, and waits for mabl authoring to complete.
+          </div>
+          <ul class="mode-features">
+            <li>✓ All unique tests converted</li>
+            <li>✓ Parallel mabl authoring</li>
+            <li>✓ UI exploration + fallback fix</li>
+            <li>✓ Live mabl tests in your workspace</li>
+          </ul>
+        </div>
+        <div class="mode-cta">
+          <button class="btn-mode btn-mabl">Convert to mabl ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Past runs -->
+    @if (pastRuns.length > 0) {
+      <div class="history-section">
+        <div class="history-header">
+          <span class="history-title">Recent Runs</span>
+          <button class="btn-clear" (click)="clearHistory()">Clear history</button>
+        </div>
+        <div class="history-list">
+          @for (run of pastRuns.slice().reverse(); track run.jobId) {
+            <div class="history-item" (click)="openRun(run)" role="button" tabindex="0"
+                 (keydown.enter)="openRun(run)">
+              <span class="history-mode">{{ modeLabel(run.mode) }}</span>
+              <span class="history-file">{{ run.filename }}</span>
+              <span class="history-time">{{ formatTime(run.ts) }}</span>
+              <span class="history-arrow">→</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <p class="footer-note">
+      Part of <a href="https://procap.ai/" target="_blank" rel="noopener">Procap</a> — AI-powered QA platform
+    </p>
+  </main>
+</div>

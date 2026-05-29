@@ -1,0 +1,102 @@
+<div class="home">
+  <!-- Nav -->
+  <header class="nav">
+    <div class="nav-inner">
+      <a routerLink="/" class="nav-brand">
+        <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="nav-logo" />
+        <div class="nav-brand-text">
+          <span class="nav-name">Procap</span>
+          <span class="nav-tagline">Accelerator</span>
+        </div>
+      </a>
+      <a href="https://procap.ai/" target="_blank" rel="noopener" class="nav-site-link">procap.ai ↗</a>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="hero-section">
+      <div class="hero-inner">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          Selenium → Playwright
+        </div>
+        <h1 class="hero-title">
+          Convert all Selenium tests<br>
+          <span class="hero-title-accent">to Playwright with AI</span>
+        </h1>
+        <p class="hero-sub">
+          Upload your Selenium project ZIP. The Procap AI agent converts all unique tests,
+          runs them, debugs failures, and delivers a ready-to-run Playwright project.
+        </p>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card">
+        <form (ngSubmit)="submit()" novalidate>
+          <div class="field">
+            <label class="label">Selenium Project ZIP</label>
+            <div class="upload-area" [class.upload-selected]="!!selectedFile">
+              <input
+                type="file" accept=".zip" class="file-input" id="zip-input"
+                (change)="onFileSelected($event)" [disabled]="isSubmitting"
+              />
+              <label for="zip-input" class="upload-label">
+                @if (selectedFile) {
+                  <span class="upload-icon">📦</span>
+                  <span class="upload-filename">{{ selectedFile.name }}</span>
+                  <span class="upload-change">Click to change</span>
+                } @else {
+                  <span class="upload-icon">📁</span>
+                  <span class="upload-text">Drop ZIP here or click to browse</span>
+                  <span class="upload-hint">Selenium Java or JS/TS project</span>
+                }
+              </label>
+            </div>
+          </div>
+
+          @if (errorMessage) {
+            <p class="error">{{ errorMessage }}</p>
+          }
+
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting || !selectedFile">
+            @if (isSubmitting) {
+              <span class="spinner"></span> Starting conversion...
+            } @else {
+              <span class="btn-icon">🎭</span> Convert to Playwright
+            }
+          </button>
+
+          <p class="note">Conversion takes ~30–60 min depending on number of tests. Live progress will be shown.</p>
+        </form>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon">📋</span>
+          <div>
+            <div class="feature-title">All Unique Tests</div>
+            <div class="feature-desc">Skips duplicates across languages</div>
+          </div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">🔍</span>
+          <div>
+            <div class="feature-title">Live Run + Debug</div>
+            <div class="feature-desc">Runs tests and fixes failures automatically</div>
+          </div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">📦</span>
+          <div>
+            <div class="feature-title">Ready to Run</div>
+            <div class="feature-desc">Full Playwright project ZIP download</div>
+          </div>
+        </div>
+      </div>
+      <p class="footer-note">
+        Part of <a href="https://procap.ai/" target="_blank" rel="noopener">Procap</a> — AI-powered QA platform
+      </p>
+    </div>
+  </main>
+</div>

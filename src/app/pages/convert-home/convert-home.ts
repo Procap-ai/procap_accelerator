@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 import { MablConvertService } from '../../services/mabl-convert.service';
 
 @Component({
   selector: 'app-convert-home',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './convert-home.html',
   styleUrl: './convert-home.scss'
 })
@@ -105,7 +105,18 @@ export class ConvertHomeComponent {
 
     this.svc.createJob(this.selectedFile, this.mablApiKey, this.workspaceId).subscribe({
       next: ({ job_id }) => {
-        void this.router.navigate(['/convert/job', job_id]);
+        try {
+  const stored = localStorage.getItem('procap_past_runs');
+  const runs = stored ? JSON.parse(stored) : [];
+  runs.push({
+    jobId: job_id, mode: 'mabl',
+    filename: this.selectedFile!.name,
+    ts: Date.now(),
+    route: `/mabl-convert/job/${job_id}`,
+  });
+  localStorage.setItem('procap_past_runs', JSON.stringify(runs.slice(-20)));
+} catch { /* ignore */ }
+void this.router.navigate(['/mabl-convert/job', job_id]);
       },
       error: (err: unknown) => {
         const detail = (err as { error?: { detail?: string } })?.error?.detail;

@@ -9,7 +9,7 @@
           <span class="nav-tagline">AI Testing</span>
         </div>
       </a>
-      <a routerLink="/agentic-testing" class="nav-link">AI QA Tester ↗</a>
+      <a routerLink="/" class="nav-back">← Back</a>
     </div>
   </header>
 
@@ -19,15 +19,15 @@
       <div class="hero-inner">
         <div class="hero-badge">
           <span class="badge-dot"></span>
-          Selenium → Playwright → mabl
+          Selenium → mabl
         </div>
         <h1 class="hero-title">
           Convert Selenium tests<br>
           <span class="hero-title-accent">automatically with AI</span>
         </h1>
         <p class="hero-sub">
-          Upload your Selenium project ZIP. The Procap agent converts one test to Playwright,
-          verifies it works, and optionally creates a live mabl test — ready to run in CI.
+          Upload your Selenium project ZIP. The Procap AI agent analyses all unique Selenium tests,
+          explores the UI, and creates live mabl tests in parallel when your workspace is configured.
         </p>
       </div>
     </div>
@@ -189,7 +189,7 @@
           </button>
 
           <p class="note">
-            Conversion takes ~15–20 minutes. You'll see live progress as the AI works.
+            Conversion takes ~30–60 minutes depending on test count. You'll see live progress as the AI works.
           </p>
         </form>
       </div>
@@ -197,24 +197,24 @@
       <!-- Features -->
       <div class="features">
         <div class="feature">
-          <span class="feature-icon">🔍</span>
+          <span class="feature-icon">📋</span>
           <div>
-            <div class="feature-title">Understands Selenium POM</div>
-            <div class="feature-desc">Reads Java & JS/TS test files</div>
+            <div class="feature-title">All Unique Tests</div>
+            <div class="feature-desc">Skips duplicate flows across languages</div>
           </div>
         </div>
         <div class="feature">
-          <span class="feature-icon">🧪</span>
+          <span class="feature-icon">🔍</span>
           <div>
-            <div class="feature-title">Live Verification</div>
-            <div class="feature-desc">Runs the converted test in-browser</div>
+            <div class="feature-title">UI Exploration</div>
+            <div class="feature-desc">Uses live browser snapshots to refine test intent</div>
           </div>
         </div>
         <div class="feature">
           <span class="feature-icon">☁️</span>
           <div>
-            <div class="feature-title">mabl Ready</div>
-            <div class="feature-desc">Optionally creates a cloud-run test</div>
+            <div class="feature-title">Parallel mabl Authoring</div>
+            <div class="feature-desc">Starts independent mabl tests in parallel</div>
           </div>
         </div>
       </div>
