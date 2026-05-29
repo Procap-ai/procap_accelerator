@@ -162,7 +162,7 @@
   min-width: 80px;
 }
 
-.step-optional { border-color: #bae6fd; background: #f0f9ff; }
+.step-mabl { border-color: #bae6fd; background: #f0f9ff; }
 
 .step-icon { font-size: 1.4rem; }
 
@@ -268,27 +268,23 @@
 }
 
 /* ── mabl config ── */
-.toggle-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.875rem;
-  color: #0ea5e9;
-  cursor: pointer;
+.mabl-config-header {
   display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-bottom: 0.75rem;
-  font-family: inherit;
-  font-weight: 500;
-  transition: color 0.15s;
-
-  &:hover { color: #0284c7; }
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
 }
 
-.toggle-icon { font-size: 0.7rem; }
+.mabl-config-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+}
 
-.toggle-hint { color: #94a3b8; font-size: 0.78rem; font-weight: 400; }
+.mabl-config-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+}
 
 .mabl-config {
   background: #f8fafc;

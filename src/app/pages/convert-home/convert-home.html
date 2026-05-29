@@ -49,9 +49,9 @@
         <span class="step-label">Verify</span>
       </div>
       <span class="step-arrow">→</span>
-      <div class="step step-optional">
+      <div class="step step-mabl">
         <span class="step-icon">🤖</span>
-        <span class="step-label">mabl <span class="step-opt">(optional)</span></span>
+        <span class="step-label">mabl Cloud Test</span>
       </div>
     </div>
 
@@ -86,90 +86,79 @@
             </div>
           </div>
 
-          <!-- mabl config toggle -->
+          <!-- mabl config (required) -->
           <div class="field">
-            <button
-              type="button"
-              class="toggle-btn"
-              (click)="showMablConfig = !showMablConfig"
-            >
-              <span class="toggle-icon">{{ showMablConfig ? '▾' : '▸' }}</span>
-              {{ showMablConfig ? 'Hide' : 'Configure' }} mabl integration
-              <span class="toggle-hint">(optional — creates a live mabl test)</span>
-              @if (keysValidated) {
-                <span class="toggle-validated">✓ validated</span>
-              }
-            </button>
+            <div class="mabl-config">
+              <div class="mabl-config-header">
+                <span class="mabl-config-title">🤖 mabl Integration</span>
+                <span class="mabl-config-desc">Required — creates live mabl cloud tests</span>
+              </div>
+              <div class="config-field">
+                <label class="sub-label" for="mabl-key">
+                  Editor API Key
+                  <a class="help-link" href="https://app.mabl.com/workspaces/-/settings/apis" target="_blank" rel="noopener">
+                    Settings → APIs → Create API Key ↗
+                  </a>
+                </label>
+                <input
+                  id="mabl-key"
+                  class="input"
+                  type="password"
+                  [(ngModel)]="mablApiKey"
+                  name="mablApiKey"
+                  placeholder="Paste your Editor API Key"
+                  autocomplete="off"
+                  [disabled]="isSubmitting"
+                  (ngModelChange)="onMablKeyChange()"
+                />
+              </div>
+              <div class="config-field">
+                <label class="sub-label" for="workspace-id">
+                  Workspace ID
+                  <a class="help-link" href="https://app.mabl.com/workspaces/-/settings/workspace" target="_blank" rel="noopener">
+                    Settings → Workspace ↗
+                  </a>
+                </label>
+                <input
+                  id="workspace-id"
+                  class="input"
+                  type="text"
+                  [(ngModel)]="workspaceId"
+                  name="workspaceId"
+                  placeholder="e.g. gV6MsPzwKxGkiBmGf1J6tA-w"
+                  autocomplete="off"
+                  [disabled]="isSubmitting"
+                  (ngModelChange)="onMablKeyChange()"
+                />
+              </div>
 
-            @if (showMablConfig) {
-              <div class="mabl-config">
-                <div class="config-field">
-                  <label class="sub-label" for="mabl-key">
-                    Editor API Key
-                    <a class="help-link" href="https://app.mabl.com/workspaces/-/settings/apis" target="_blank" rel="noopener">
-                      Settings → APIs → Create API Key ↗
-                    </a>
-                  </label>
-                  <input
-                    id="mabl-key"
-                    class="input"
-                    type="password"
-                    [(ngModel)]="mablApiKey"
-                    name="mablApiKey"
-                    placeholder="Paste your Editor API Key"
-                    autocomplete="off"
-                    [disabled]="isSubmitting"
-                    (ngModelChange)="onMablKeyChange()"
-                  />
-                </div>
-                <div class="config-field">
-                  <label class="sub-label" for="workspace-id">
-                    Workspace ID
-                    <a class="help-link" href="https://app.mabl.com/workspaces/-/settings/workspace" target="_blank" rel="noopener">
-                      Settings → Workspace ↗
-                    </a>
-                  </label>
-                  <input
-                    id="workspace-id"
-                    class="input"
-                    type="text"
-                    [(ngModel)]="workspaceId"
-                    name="workspaceId"
-                    placeholder="e.g. gV6MsPzwKxGkiBmGf1J6tA-w"
-                    autocomplete="off"
-                    [disabled]="isSubmitting"
-                    (ngModelChange)="onMablKeyChange()"
-                  />
-                </div>
-
-                <!-- Validation row -->
-                <div class="validate-row">
-                  @if (keysValidated) {
-                    <span class="validate-ok">✓ Keys validated — mabl test will be created</span>
-                  } @else {
-                    <button
-                      type="button"
-                      class="validate-btn"
-                      [disabled]="!mablKeysEntered || isValidatingKeys || isSubmitting"
-                      (click)="validateMablKeys()"
-                    >
-                      @if (isValidatingKeys) {
-                        <span class="spinner-sm"></span> Validating...
-                      } @else {
-                        Validate Keys
-                      }
-                    </button>
-                  }
-                  @if (keysValidationError) {
-                    <span class="validate-error">{{ keysValidationError }}</span>
-                  }
-                </div>
-
-                @if (!keysValidated && (mablApiKey.trim() || workspaceId.trim())) {
-                  <p class="config-warn">⚠ Enter both keys and validate to enable the Convert button.</p>
+              <!-- Validation row -->
+              <div class="validate-row">
+                @if (keysValidated) {
+                  <span class="validate-ok">✓ Keys validated — mabl test will be created</span>
+                } @else {
+                  <button
+                    type="button"
+                    class="validate-btn"
+                    [disabled]="!mablKeysEntered || isValidatingKeys || isSubmitting"
+                    (click)="validateMablKeys()"
+                  >
+                    @if (isValidatingKeys) {
+                      <span class="spinner-sm"></span> Validating...
+                    } @else {
+                      Validate Keys
+                    }
+                  </button>
+                }
+                @if (keysValidationError) {
+                  <span class="validate-error">{{ keysValidationError }}</span>
                 }
               </div>
-            }
+
+              @if (!keysValidated && (mablApiKey.trim() || workspaceId.trim())) {
+                <p class="config-warn">⚠ Enter both keys and validate to enable the Convert button.</p>
+              }
+            </div>
           </div>
 
           @if (errorMessage) {

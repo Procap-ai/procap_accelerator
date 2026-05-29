@@ -18,7 +18,6 @@ export class ConvertHomeComponent {
   selectedFile: File | null = null;
   mablApiKey = '';
   workspaceId = '';
-  showMablConfig = false;
   isSubmitting = false;
   errorMessage = '';
 
@@ -54,14 +53,7 @@ export class ConvertHomeComponent {
 
   get canSubmit(): boolean {
     if (!this.selectedFile) return false;
-    if (this.showMablConfig) {
-      const hasKey = !!this.mablApiKey.trim();
-      const hasWs = !!this.workspaceId.trim();
-      // If either key field has content, both must be filled and validated
-      if (hasKey || hasWs) {
-        if (!hasKey || !hasWs || !this.keysValidated) return false;
-      }
-    }
+    if (!this.keysValidated) return false;
     return true;
   }
 
@@ -96,7 +88,7 @@ export class ConvertHomeComponent {
       this.errorMessage = 'Please select a Selenium project ZIP file.';
       return;
     }
-    if (this.showMablConfig && this.mablApiKey.trim() && !this.keysValidated) {
+    if (this.mablApiKey.trim() && !this.keysValidated) {
       this.errorMessage = 'Please validate your mabl API keys before converting.';
       return;
     }
