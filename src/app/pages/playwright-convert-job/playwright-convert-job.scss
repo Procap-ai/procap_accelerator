@@ -249,6 +249,7 @@
   line-height: 1.6;
   margin: 0;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 /* ── Results card ── */
@@ -364,6 +365,7 @@
   color: #374151;
   line-height: 1.55;
   word-break: break-word;
+  overflow-wrap: break-word;
 
   &:last-child { margin-bottom: 0; }
 }
