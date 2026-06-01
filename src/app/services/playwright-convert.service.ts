@@ -29,7 +29,7 @@ export interface PwConvertJobResults {
 @Injectable({ providedIn: 'root' })
 export class PlaywrightConvertService {
   private readonly http = inject(HttpClient);
-  readonly apiBase = 'https://api.lokaai.in';
+  readonly apiBase = 'https://api.procap.ai';
 
   /** Two-step upload: get presigned S3 URL → PUT file to S3 → create job */
   createJob(seleniumZip: File): Observable<{ job_id: string }> {

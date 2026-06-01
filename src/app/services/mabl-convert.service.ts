@@ -36,7 +36,7 @@ export interface MablKeyValidation {
 @Injectable({ providedIn: 'root' })
 export class MablConvertService {
   private readonly http = inject(HttpClient);
-  readonly apiBase = 'https://api.lokaai.in';
+  readonly apiBase = 'https://api.procap.ai';
 
   validateKeys(apiKey: string, workspaceId: string): Observable<MablKeyValidation> {
     const form = new FormData();
