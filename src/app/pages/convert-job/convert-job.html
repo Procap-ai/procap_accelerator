@@ -4,7 +4,7 @@
     <button class="topbar-back" (click)="goHome()" title="Back to home">
       <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="topbar-logo" />
     </button>
-    <div class="topbar-title">Selenium → Playwright{{ mablTestUrl ? ' → mabl' : '' }}</div>
+    <div class="topbar-title">Selenium/Playwright → mabl</div>
     <div class="topbar-actions">
       @if (isDone && results?.playwright_zip_path) {
         <a [href]="downloadUrl" class="btn-download" download>⬇ Download Playwright</a>

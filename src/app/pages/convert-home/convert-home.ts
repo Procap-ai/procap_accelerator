@@ -32,7 +32,7 @@ export class ConvertHomeComponent {
     const file = input.files?.[0];
     if (file) {
       if (!file.name.endsWith('.zip')) {
-        this.errorMessage = 'Please select a .zip file containing your Selenium project.';
+        this.errorMessage = 'Please select a .zip file containing your Selenium/Playwright project.';
         this.selectedFile = null;
         return;
       }
@@ -85,7 +85,7 @@ export class ConvertHomeComponent {
 
   submit(): void {
     if (!this.selectedFile) {
-      this.errorMessage = 'Please select a Selenium project ZIP file.';
+      this.errorMessage = 'Please select a Selenium/Playwright project ZIP file.';
       return;
     }
     if (this.mablApiKey.trim() && !this.keysValidated) {

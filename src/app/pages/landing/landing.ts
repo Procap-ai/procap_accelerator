@@ -46,6 +46,6 @@ export class LandingComponent implements OnInit {
   }
 
   modeLabel(mode: string): string {
-    return mode === 'playwright' ? 'Selenium → Playwright' : 'Selenium → mabl';
+    return mode === 'playwright' ? 'Selenium → Playwright' : 'Selenium/Playwright → mabl';
   }
 }
