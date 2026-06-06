@@ -23,6 +23,12 @@
               "zone.js"
             ],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "prismjs",
+              "prismjs/components/prism-ruby",
+              "prismjs/components/prism-python",
+              "prismjs/components/prism-java"
+            ],
             "inlineStyleLanguage": "scss",
             "styles": [
               "src/styles.scss"
@@ -38,8 +44,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "16kB",
-                  "maximumError": "24kB"
+                  "maximumWarning": "40kB",
+                  "maximumError": "60kB"
                 }
               ],
               "outputHashing": "none"

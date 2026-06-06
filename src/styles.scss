@@ -1,5 +1,23 @@
 @use "sass:math";
 
+:root {
+  // Procap sky-blue light theme — consumed by /samples pages
+  --color-primary: #0ea5e9;
+  --color-primary-hover: #0284c7;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-tertiary: #e2e8f0;
+  --surface: #ffffff;
+  --border-color: #e2e8f0;
+
+  --nav-height: 56px;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }

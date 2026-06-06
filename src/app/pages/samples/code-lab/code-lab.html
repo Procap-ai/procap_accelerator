@@ -1,0 +1,558 @@
+<!-- Procap-branded top nav -->
+<header class="lab-nav">
+  <a href="https://procap.ai/" target="_blank" rel="noopener" class="lab-brand">
+    <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="lab-logo" />
+    <span class="lab-brand-text">
+      <span class="lab-name">Procap</span>
+      <span class="lab-tagline">Code Lab</span>
+    </span>
+  </a>
+  <a href="https://procap.ai/" target="_blank" rel="noopener" class="lab-site-link">procap.ai ↗</a>
+</header>
+
+<!-- Problem List View -->
+@if (viewMode() === 'list') {
+<div class="problems-list">
+  <div class="page-header">
+    <h1>Code Lab</h1>
+    <p class="subtitle">Sharpen your skills on real interview problems</p>
+  </div>
+
+  @if (isLoading()) {
+  <div class="loading-state">
+    <div class="loader"></div>
+    <p>Loading problems...</p>
+  </div>
+  } @else {
+    @if (errorMessage()) {
+    <div class="error-banner">{{ errorMessage() }}</div>
+    }
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <!-- Status Tabs -->
+      <div class="status-tabs">
+        <button [class.active]="filterTab() === 'all'" (click)="setFilterTab('all')">
+          All <span class="count">{{ problemStats().all }}</span>
+        </button>
+        <button [class.active]="filterTab() === 'completed'" (click)="setFilterTab('completed')">
+          ✓ Solved <span class="count">{{ problemStats().completed }}</span>
+        </button>
+        <button [class.active]="filterTab() === 'attempted'" (click)="setFilterTab('attempted')">
+          ⏳ In Progress <span class="count">{{ problemStats().attempted }}</span>
+        </button>
+        <button [class.active]="filterTab() === 'not_started'" (click)="setFilterTab('not_started')">
+          📝 Todo <span class="count">{{ problemStats().not_started }}</span>
+        </button>
+      </div>
+
+      <!-- Search and Difficulty Filter -->
+      <div class="filter-controls">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search problems..."
+          [value]="searchQuery()"
+          (input)="onSearchChange($any($event.target).value)"
+        />
+        <select class="difficulty-select" [value]="difficultyFilter()" (change)="setDifficultyFilter($any($event.target).value)">
+          <option value="all">All Difficulties</option>
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Results info -->
+    <div class="results-info">
+      Showing {{ paginatedProblems().length }} of {{ filteredProblems().length }} problems
+      @if (totalPages() > 1) {
+        <span class="page-info">(Page {{ currentPage() }} of {{ totalPages() }})</span>
+      }
+    </div>
+
+    <div class="problems-grid">
+      @for (problem of paginatedProblems(); track problem.id) {
+      <div
+        class="problem-card"
+        [class.completed]="problem.status === 'completed'"
+        [class.attempted]="problem.status === 'attempted'"
+        tabindex="0"
+        role="button"
+        (click)="selectProblem(problem)"
+        (keydown.enter)="selectProblem(problem)"
+        (keydown.space)="selectProblem(problem)"
+      >
+        <div class="problem-header">
+          <h3>{{ problem.title }}</h3>
+          <div class="problem-badges">
+            @if (problem.status === 'completed') {
+            <span class="status-badge completed">✓ Solved</span>
+            } @else if (problem.status === 'attempted') {
+            <span class="status-badge attempted">In Progress</span>
+            }
+            <span class="difficulty difficulty-{{ problem.difficulty }}">
+              {{ getDifficultyLabel(problem.difficulty) }}
+            </span>
+          </div>
+        </div>
+        <p class="problem-preview">{{ problem.description }}</p>
+        <div class="problem-footer">
+          <span class="lang-badges">
+            @for (lang of (problem.languages || ['ruby']); track lang) {
+              <span class="lang-badge">{{ lang | titlecase }}</span>
+            }
+          </span>
+          <span class="arrow">→</span>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <app-pagination
+        [currentPage]="currentPage()"
+        [totalPages]="totalPages()"
+        [totalCount]="filteredProblems().length"
+        [perPage]="12"
+        [showInfo]="false"
+        (pageChange)="onPageChange($event)"
+      />
+    }
+
+    @if (filteredProblems().length === 0 && !errorMessage()) {
+    <div class="empty-state">
+      @if (searchQuery() || filterTab() !== 'all' || difficultyFilter() !== 'all') {
+        <p>No problems match your filters.</p>
+        <button class="clear-filters-btn" (click)="setFilterTab('all'); setDifficultyFilter('all'); onSearchChange('')">
+          Clear Filters
+        </button>
+      } @else {
+        <p>No problems available.</p>
+      }
+    </div>
+    }
+  }
+</div>
+}
+
+<!-- Problem Solve View -->
+@if (viewMode() === 'solve') {
+<div class="solve-view">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button class="back-btn" (click)="backToList()">← Back</button>
+    @if (currentProblem()) {
+    <h2>{{ currentProblem()!.title }}</h2>
+    <span class="difficulty" [class]="difficultyClass()">
+      {{ getDifficultyLabel(currentProblem()!.difficulty) }}
+    </span>
+    <div class="timer" [class]="'timer-' + timerStatus()">
+      <span class="timer-icon">⏱</span>
+      <span class="timer-value">{{ formattedTime() }}</span>
+    </div>
+    }
+  </div>
+
+  @if (isLoading()) {
+  <div class="loading-state solve-loading">
+    <div class="loader"></div>
+    <p>Loading problem...</p>
+  </div>
+  } @else {
+  <div class="main-content">
+    <!-- Left Panel: Description, Test Cases & Editorial -->
+    <div class="left-panel">
+      <div class="tabs">
+        <button
+          [class.active]="activeTab() === 'description'"
+          (click)="setTab('description')"
+        >
+          Description
+        </button>
+        <button
+          [class.active]="activeTab() === 'testcases'"
+          (click)="setTab('testcases')"
+        >
+          Test Cases
+          @if (testResults().length > 0) {
+            <span class="tab-badge" [class.passed]="allPassed()" [class.failed]="!allPassed()">
+              {{ passedCount() }}/{{ totalTests() }}
+            </span>
+          }
+        </button>
+        <button
+          [class.active]="activeTab() === 'editorial'"
+          (click)="setTab('editorial')"
+          [class.locked]="!editorialUnlocked()"
+        >
+          Editorial
+          @if (!editorialUnlocked()) {
+            <span class="lock-icon-small">🔒</span>
+          }
+        </button>
+      </div>
+
+      <div class="tab-content">
+        @if (activeTab() === 'description') {
+        <div class="description-tab">
+          @if (currentProblem()) {
+          <div class="description-content" [innerHTML]="currentProblem()!.description | markdown"></div>
+
+          <!-- Examples -->
+          @if (currentProblem()!.examples && currentProblem()!.examples.length > 0) {
+          <div class="examples-section">
+            <h3>Examples</h3>
+            @for (example of currentProblem()!.examples; track $index) {
+            <div class="example-box">
+              <div class="example-header">Example {{ $index + 1 }}</div>
+              <div class="example-content">
+                <div class="example-row">
+                  <span class="example-label">Input:</span>
+                  <code>{{ example.input }}</code>
+                </div>
+                <div class="example-row">
+                  <span class="example-label">Output:</span>
+                  <code>{{ example.output }}</code>
+                </div>
+                @if (example.explanation) {
+                <div class="example-row explanation">
+                  <span class="example-label">Explanation:</span>
+                  <span>{{ example.explanation }}</span>
+                </div>
+                }
+              </div>
+            </div>
+            }
+          </div>
+          }
+
+          <!-- Constraints -->
+          @if (currentProblem()!.constraints && currentProblem()!.constraints.length > 0) {
+          <div class="constraints-section">
+            <h3>Constraints</h3>
+            <ul class="constraints-list">
+              @for (constraint of currentProblem()!.constraints; track $index) {
+              <li><code>{{ constraint }}</code></li>
+              }
+            </ul>
+          </div>
+          }
+          }
+        </div>
+        }
+
+        @if (activeTab() === 'testcases') {
+        <div class="testcases-tab">
+          <!-- Global Error Section -->
+          @if (errorMessage()) {
+          <div class="console-box error-box">
+            <div class="console-box-header">
+              <span>Error</span>
+              @if (executionTime() > 0) {
+              <span class="exec-time">{{ executionTime() }}ms</span>
+              }
+            </div>
+            <div class="console-box-content">
+              <div class="error-output">{{ errorMessage() }}</div>
+            </div>
+          </div>
+          }
+
+          @if (currentProblem()) {
+            <!-- Public Test Cases -->
+            <div class="test-section-header">
+              Public Test Cases
+              @if (executionTime() > 0 && !errorMessage()) {
+              <span class="exec-time-badge">{{ executionTime() }}ms</span>
+              }
+            </div>
+            @for (tc of currentProblem()!.public_test_cases; track $index) {
+            <div class="test-case" [class.test-passed]="publicTestResults()[$index] && publicTestResults()[$index].passed" [class.test-failed]="publicTestResults()[$index] && !publicTestResults()[$index].passed">
+              <div class="test-header">
+                <span class="test-num">Test {{ $index + 1 }}</span>
+                @if (publicTestResults().length > $index) {
+                <span
+                  class="test-status"
+                  [class.passed]="publicTestResults()[$index].passed"
+                  [class.failed]="!publicTestResults()[$index].passed"
+                >
+                  {{ publicTestResults()[$index].passed ? '✓ Passed' : '✗ Failed' }}
+                </span>
+                }
+              </div>
+              <div class="test-body">
+                <div class="test-section">
+                  <span class="section-label">Input:</span>
+                  <pre>{{ formatInput(tc.input) }}</pre>
+                </div>
+                <div class="test-section">
+                  <span class="section-label">Expected:</span>
+                  <pre>{{ formatOutput(tc.expected) }}</pre>
+                </div>
+                @if (publicTestResults().length > $index && !publicTestResults()[$index].passed) {
+                <div class="test-section actual">
+                  <span class="section-label">Your Output:</span>
+                  <pre>{{ formatOutput(publicTestResults()[$index].actual) }}</pre>
+                  @if (publicTestResults()[$index].error) {
+                  <div class="test-error">{{ publicTestResults()[$index].error }}</div>
+                  }
+                </div>
+                }
+                @if (publicTestResults().length > $index && publicTestResults()[$index].console) {
+                <div class="test-console">
+                  <span class="section-label">Console Output:</span>
+                  <pre>{{ publicTestResults()[$index].console }}</pre>
+                </div>
+                }
+              </div>
+            </div>
+            }
+
+            <!-- Hidden Test Cases -->
+            <div class="test-section-header hidden-header">
+              <span class="lock-icon">🔒</span> Hidden Test Cases ({{ hiddenTestCount() }})
+            </div>
+            @for (i of [].constructor(hiddenTestCount()); track $index) {
+            <div class="test-case hidden-test"
+                 [class.test-passed]="hiddenTestResults()[$index] && hiddenTestResults()[$index].passed"
+                 [class.test-failed]="hiddenTestResults()[$index] && !hiddenTestResults()[$index].passed"
+                 [class.locked]="!isSubmitMode()">
+              <div class="test-header">
+                <span class="test-num">
+                  @if (!isSubmitMode()) {
+                    <span class="lock-icon-small">🔒</span>
+                  }
+                  Hidden Test {{ $index + 1 }}
+                </span>
+                @if (isSubmitMode() && hiddenTestResults().length > $index) {
+                <span
+                  class="test-status"
+                  [class.passed]="hiddenTestResults()[$index].passed"
+                  [class.failed]="!hiddenTestResults()[$index].passed"
+                >
+                  {{ hiddenTestResults()[$index].passed ? '✓ Passed' : '✗ Failed' }}
+                </span>
+                } @else if (!isSubmitMode()) {
+                <span class="test-status locked">Run Submit to test</span>
+                }
+              </div>
+              @if (!isSubmitMode()) {
+              <div class="test-body locked-body">
+                <div class="locked-message">Submit your solution to run hidden test cases</div>
+              </div>
+              } @else if (hiddenTestResults().length > $index && !hiddenTestResults()[$index].passed) {
+                <div class="test-body">
+                  @if (hiddenTestResults()[$index].error) {
+                  <div class="test-section">
+                    <div class="test-error">{{ hiddenTestResults()[$index].error }}</div>
+                  </div>
+                  } @else {
+                  <div class="test-section actual">
+                    <span class="section-label">Status:</span>
+                    <pre class="failed-text">Test case failed</pre>
+                  </div>
+                  }
+                </div>
+                }
+            </div>
+            }
+          }
+        </div>
+        }
+
+        @if (activeTab() === 'editorial') {
+        <div class="editorial-tab">
+          @if (!editorialUnlocked()) {
+          <div class="editorial-locked">
+            <div class="lock-icon-large">🔒</div>
+            <h3>Editorial Locked</h3>
+            <p>Solve all test cases to unlock the editorial with approach and solution code.</p>
+          </div>
+          } @else if (currentProblem()?.editorial) {
+          <div class="editorial-content">
+            <div class="editorial-section">
+              <h3>Approach</h3>
+              <div class="editorial-text" [innerHTML]="currentProblem()!.editorial!.approach | markdown"></div>
+            </div>
+
+            <div class="editorial-section">
+              <h3>Complexity Analysis</h3>
+              <ul class="complexity-list">
+                <li><strong>Time Complexity:</strong> {{ currentProblem()!.editorial!.time_complexity }}</li>
+                <li><strong>Space Complexity:</strong> {{ currentProblem()!.editorial!.space_complexity }}</li>
+              </ul>
+            </div>
+
+            <div class="editorial-section">
+              <div class="solution-header">
+                <h3>Solution Code</h3>
+                @if (supportedLanguages().length > 1) {
+                <select class="editorial-lang-select" [(ngModel)]="selectedLanguageModel" (ngModelChange)="onLanguageChange($event)">
+                  @for (lang of supportedLanguages(); track lang) {
+                    <option [value]="lang">{{ lang | titlecase }}</option>
+                  }
+                </select>
+                }
+                <button class="copy-code-btn" (click)="copySolutionCode()" [class.copied]="codeCopied()">
+                  {{ codeCopied() ? '✓ Copied!' : '📋 Copy' }}
+                </button>
+              </div>
+              <pre class="solution-code" [innerHTML]="highlightCode(getCurrentSolutionCode(), selectedLanguage())"></pre>
+            </div>
+          </div>
+          } @else {
+          <div class="editorial-empty">
+            <p>Editorial not available for this problem.</p>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right Panel: Code Editor -->
+    <div class="right-panel">
+      <div class="editor-header">
+        @if (supportedLanguages().length > 1) {
+        <select class="lang-select" [(ngModel)]="selectedLanguageModel" (ngModelChange)="onLanguageChange($event)">
+          @for (lang of supportedLanguages(); track lang) {
+            <option [value]="lang">{{ lang | titlecase }}</option>
+          }
+        </select>
+        } @else {
+        <span class="lang-label">{{ selectedLanguage() | titlecase }}</span>
+        }
+        <div class="editor-actions">
+          <button class="format-btn" (click)="formatCode()" title="Format Code (Shift+Alt+F)">⎗ Format</button>
+          <button class="reset-btn" (click)="resetCode()">Reset Code</button>
+        </div>
+      </div>
+
+      <div class="code-editor-wrapper">
+        <app-code-editor
+          #codeEditor
+          [code]="code()"
+          (codeChange)="onCodeChange($event)"
+          [language]="selectedLanguage()"
+          theme="vs-dark"
+        ></app-code-editor>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-bar">
+        <div class="result-summary">
+          @if (testResults().length > 0) {
+          <span [class.all-passed]="allPassed()" [class.some-failed]="!allPassed()">
+            {{ passedCount() }}/{{ totalTests() }} tests passed
+          </span>
+          }
+        </div>
+        <div class="action-buttons">
+          <button
+            class="run-btn"
+            (click)="runCode()"
+            [disabled]="isRunning() || isSubmitting()"
+          >
+            @if (isRunning()) { Running... } @else { ▶ Run }
+          </button>
+          <button
+            class="submit-btn"
+            (click)="submitCode()"
+            [disabled]="isRunning() || isSubmitting()"
+          >
+            @if (isSubmitting()) { Submitting... } @else { Submit }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Success Popup -->
+  @if (showSuccessPopup()) {
+  <div
+    class="popup-overlay"
+    role="button"
+    tabindex="0"
+    (click)="closeAllPopups()"
+    (keydown.enter)="closeAllPopups()"
+    (keydown.space)="closeAllPopups()"
+  >
+    <div
+      class="popup success-popup"
+      role="dialog"
+      tabindex="0"
+      (click)="$event.stopPropagation()"
+      (keydown.enter)="$event.stopPropagation()"
+      (keydown.space)="$event.stopPropagation()"
+    >
+      <div class="confetti">
+        @for (i of [].constructor(50); track $index) {
+        <div class="confetti-piece" [style.--delay]="$index * 0.1 + 's'" [style.--x]="($index % 10) * 10 + '%'"></div>
+        }
+      </div>
+      <div class="popup-content">
+        <div class="popup-icon success">🎉</div>
+        <h2>Congratulations!</h2>
+        <p>You solved the problem!</p>
+        <p class="popup-stats">{{ passedCount() }}/{{ totalTests() }} tests passed</p>
+        <p class="popup-hint">Editorial is now unlocked!</p>
+        <div class="popup-actions">
+          <button class="popup-btn secondary" (click)="closeAllPopups(); setTab('editorial')">View Editorial</button>
+          <button class="popup-btn primary" (click)="goToHomeFromPopup()">Back to Problems</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Failure Popup -->
+  @if (showFailurePopup()) {
+  <div
+    class="popup-overlay"
+    role="button"
+    tabindex="0"
+    (click)="closeAllPopups()"
+    (keydown.enter)="closeAllPopups()"
+    (keydown.space)="closeAllPopups()"
+  >
+    <div
+      class="popup failure-popup"
+      role="dialog"
+      tabindex="0"
+      (click)="$event.stopPropagation()"
+      (keydown.enter)="$event.stopPropagation()"
+      (keydown.space)="$event.stopPropagation()"
+    >
+      <div class="popup-content">
+        <div class="popup-icon failure">❌</div>
+        <h2>Not Quite!</h2>
+        <p>Some tests failed. Keep trying!</p>
+        <p class="popup-stats">{{ passedCount() }}/{{ totalTests() }} tests passed</p>
+        <div class="popup-actions">
+          <button class="popup-btn secondary" (click)="closeAllPopups()">Try Again</button>
+          <button class="popup-btn primary" (click)="goToHomeFromPopup()">Back to Problems</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Timeout Popup -->
+  @if (showTimeoutPopup()) {
+  <div class="popup-overlay">
+    <div class="popup timeout-popup">
+      <div class="popup-content">
+        <div class="popup-icon timeout">⏰</div>
+        <h2>Time's Up!</h2>
+        <p>You ran out of time for this problem.</p>
+        <button class="popup-btn primary" (click)="goToHomeFromPopup()">Back to Problems</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>
+}
