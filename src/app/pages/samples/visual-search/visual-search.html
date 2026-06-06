@@ -1,0 +1,114 @@
+<!-- Procap-branded top nav -->
+<header class="vs-nav">
+  <a href="https://procap.ai/" target="_blank" rel="noopener" class="vs-brand">
+    <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="vs-logo" />
+    <span class="vs-brand-text">
+      <span class="vs-name">Procap</span>
+      <span class="vs-tagline">Visual Search</span>
+    </span>
+  </a>
+  <a href="https://procap.ai/" target="_blank" rel="noopener" class="vs-site-link">procap.ai ↗</a>
+</header>
+
+<main class="vs-main">
+  <!-- Hero + command bar -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge"><span class="dot"></span> AI semantic image search</div>
+      <h1 class="hero-title">Search the visual web by <span class="accent">meaning</span></h1>
+      <p class="hero-sub">Describe it, drop an image, or paste a link — then click any result to dive into a stream of visually similar finds.</p>
+
+      <div
+        class="command-bar"
+        [class.drag]="dragOver()"
+        (drop)="onDrop($event)"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+      >
+        <span class="cmd-icon">🔍</span>
+        <input
+          class="cmd-input"
+          type="text"
+          [(ngModel)]="query"
+          (keydown.enter)="submit()"
+          placeholder="Try “sunset over mountains” — or drop / paste an image"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <label class="cmd-upload" title="Upload an image">
+          <input type="file" accept="image/*" (change)="onFileInput($event)" hidden />
+          <span>📷</span>
+        </label>
+        <button class="cmd-go" (click)="submit()" [disabled]="searching()">Search</button>
+      </div>
+
+      <div class="samples">
+        @for (s of samples; track s) {
+          <button class="chip" (click)="searchSample(s)">{{ s }}</button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Exploration trail -->
+  @if (trail().length > 0) {
+    <section class="trail">
+      <span class="trail-label">Your trail</span>
+      <div class="trail-track">
+        @for (step of trail(); track $index) {
+          @if ($index > 0) { <span class="trail-arrow">→</span> }
+          <button class="trail-node" [class.active]="$index === activeStep()" (click)="goToStep($index)">
+            @if (step.thumb) {
+              <img [src]="step.thumb" alt="" class="trail-thumb" />
+            } @else {
+              <span class="trail-glyph">“”</span>
+            }
+            <span class="trail-text">{{ step.label }}</span>
+          </button>
+        }
+      </div>
+      <button class="trail-clear" (click)="clearTrail()" title="Start over">Reset</button>
+    </section>
+  }
+
+  <!-- Results -->
+  <section class="results">
+    @if (error()) {
+      <div class="state error">
+        <div class="state-emoji">⚠️</div>
+        <p>{{ error() }}</p>
+      </div>
+    } @else if (searching()) {
+      <div class="grid">
+        @for (s of skeletons; track $index) {
+          <div class="skeleton" [style.height.px]="180 + ($index % 4) * 60"></div>
+        }
+      </div>
+    } @else if (validResults().length > 0) {
+      <div class="grid">
+        @for (r of validResults(); track trackById($index, r)) {
+          <figure class="card">
+            <img class="card-img" [src]="r.metadata_url" alt="" loading="lazy" />
+            <figcaption class="card-overlay">
+              <span class="match" [attr.data-tone]="matchTone(r)">
+                <span class="match-dot"></span>{{ matchPercent(r) }}% match
+              </span>
+              @if (r.resolution) {
+                <span class="res">{{ r.resolution.width }}×{{ r.resolution.height }}</span>
+              }
+              <div class="card-actions">
+                <button class="act primary" (click)="findSimilar(r)">✨ Find similar</button>
+                <button class="act" (click)="open(r)" title="Open original">↗</button>
+              </div>
+            </figcaption>
+          </figure>
+        }
+      </div>
+    } @else if (hasSearched()) {
+      <div class="state">
+        <div class="state-emoji">🫥</div>
+        <p>No matches found. Try a different description or image.</p>
+      </div>
+    }
+  </section>
+</main>

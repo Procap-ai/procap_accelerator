@@ -6,6 +6,7 @@ import { PlaywrightConvertJobComponent } from './pages/playwright-convert-job/pl
 import { ConvertHomeComponent } from './pages/convert-home/convert-home';
 import { ConvertJobComponent } from './pages/convert-job/convert-job';
 import { CodeLabComponent } from './pages/samples/code-lab/code-lab';
+import { VisualSearchComponent } from './pages/samples/visual-search/visual-search';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -15,5 +16,6 @@ export const routes: Routes = [
   { path: 'mabl-convert/job/:id', component: ConvertJobComponent },
   // Sample projects (not linked from the home page)
   { path: 'samples/code-lab', component: CodeLabComponent },
+  { path: 'samples/visual-search', component: VisualSearchComponent },
   { path: '**', redirectTo: '' }
 ];
