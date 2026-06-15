@@ -75,6 +75,27 @@
           <button class="btn-mode btn-mabl">Convert to mabl ↗</button>
         </div>
       </div>
+
+      <div class="mode-card" (click)="navigate('/quality')" role="button" tabindex="0"
+           (keydown.enter)="navigate('/quality')">
+        <div class="mode-icon">🔬</div>
+        <div class="mode-body">
+          <div class="mode-title">Repo Quality &amp; Coverage</div>
+          <div class="mode-desc">
+            Paste a public GitHub URL. The agent runs static quality checks, finds test-coverage
+            gaps, and proposes fixes you select in chat — then opens a PR.
+          </div>
+          <ul class="mode-features">
+            <li>✓ Lint + type + coverage scan</li>
+            <li>✓ Site-map–grounded test ideas</li>
+            <li>✓ Pick a fix, agent implements</li>
+            <li>✓ One-click pull request</li>
+          </ul>
+        </div>
+        <div class="mode-cta">
+          <button class="btn-mode btn-playwright">Analyze a repo ↗</button>
+        </div>
+      </div>
     </div>
 
     <!-- Past runs -->
