@@ -8,6 +8,11 @@ export interface ConvertJobProgressEntry {
   screenshot?: string;
   source?: 'agent' | 'system';
   analysis_update?: string;
+  /** Event metadata from the agent's progress/ folder */
+  type?: 'step' | 'mcp_request' | 'mcp_response' | 'validate' | 'info' | 'done' | 'error';
+  title?: string;
+  tool?: string;
+  call?: number;
 }
 
 export interface ConvertJobStatus {

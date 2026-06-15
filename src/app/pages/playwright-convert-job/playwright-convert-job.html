@@ -127,10 +127,28 @@
           @for (entry of worklogEntries; track entry.ts) {
             <div class="entry"
               [class.entry-agent]="entry.source === 'agent'"
-              [class.entry-screenshot]="!!entry.screenshot">
+              [class.entry-screenshot]="!!entry.screenshot"
+              [ngClass]="entry.type ? 'entry-type-' + entry.type : ''">
               <span class="entry-time">{{ formatTime(entry.ts) }}</span>
               <div class="entry-body">
-                <p class="entry-msg">{{ entry.msg }}</p>
+                @if (entry.title) {
+                  <div class="entry-head">
+                    @if (typeLabel(entry.type)) {
+                      <span class="entry-badge" [ngClass]="'badge-' + entry.type">{{ typeLabel(entry.type) }}</span>
+                    }
+                    <span class="entry-title">{{ entry.title }}</span>
+                    @if (entry.msg && entry.msg.trim().length > 0) {
+                      <button class="entry-copy" type="button" (click)="copy(entry)">
+                        {{ copiedTs === entry.ts ? '✓ Copied' : 'Copy' }}
+                      </button>
+                    }
+                  </div>
+                  @if (entry.msg && entry.msg.trim().length > 0) {
+                    <pre class="entry-block">{{ entry.msg }}</pre>
+                  }
+                } @else {
+                  <p class="entry-msg">{{ entry.msg }}</p>
+                }
                 @if (entry.screenshot) {
                   <div class="shot-container">
                     <img [src]="captureUrl(entry.screenshot)" alt="Screenshot" class="shot-img" loading="lazy" />

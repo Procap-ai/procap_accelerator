@@ -80,8 +80,32 @@ export class ConvertJobComponent implements OnInit, OnDestroy {
     return this.status?.progress ?? [];
   }
 
+  copiedTs: number | null = null;
+
   get worklogEntries(): ConvertJobProgressEntry[] {
-    return this.progressEntries.filter(e => e.msg && e.msg.trim().length > 0);
+    return this.progressEntries.filter(
+      e => (e.msg && e.msg.trim().length > 0) || (e.title && e.title.trim().length > 0)
+    );
+  }
+
+  typeLabel(t?: string): string {
+    switch (t) {
+      case 'mcp_request': return 'Request';
+      case 'mcp_response': return 'Response';
+      case 'validate': return 'Validate';
+      case 'step': return 'Step';
+      case 'done': return 'Done';
+      case 'error': return 'Error';
+      default: return '';
+    }
+  }
+
+  copy(entry: ConvertJobProgressEntry): void {
+    const text = entry.msg && entry.msg.trim().length > 0 ? entry.msg : (entry.title ?? '');
+    void navigator.clipboard?.writeText(text).then(() => {
+      this.copiedTs = entry.ts;
+      setTimeout(() => { if (this.copiedTs === entry.ts) this.copiedTs = null; }, 1500);
+    });
   }
 
   get liveAnalysis(): string {
@@ -167,7 +191,7 @@ export class ConvertJobComponent implements OnInit, OnDestroy {
   }
 
   private updatePipeline(job: ConvertJobStatus): void {
-    const msgs = job.progress.map(e => e.msg.toLowerCase());
+    const msgs = job.progress.map(e => `${e.title ?? ''} ${e.msg ?? ''}`.toLowerCase());
     const hasMsg = (kw: string) => msgs.some(m => m.includes(kw));
 
     const analysed  = hasMsg('step 1') || hasMsg('found') && hasMsg('unique test') || hasMsg('analysed selenium');

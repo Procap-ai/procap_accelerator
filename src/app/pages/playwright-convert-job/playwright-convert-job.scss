@@ -360,6 +360,74 @@
 
 .entry-body { flex: 1; min-width: 0; }
 
+.entry-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.entry-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 5px;
+  background: #e2e8f0;
+  color: #475569;
+  flex-shrink: 0;
+}
+.badge-mcp_request  { background: #dbeafe; color: #1d4ed8; }
+.badge-mcp_response { background: #dcfce7; color: #15803d; }
+.badge-validate     { background: #fef3c7; color: #b45309; }
+.badge-step         { background: #ede9fe; color: #6d28d9; }
+.badge-done         { background: #d1fae5; color: #047857; }
+.badge-error        { background: #fee2e2; color: #b91c1c; }
+
+.entry-title {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.82rem;
+  word-break: break-word;
+}
+
+.entry-copy {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #e2e8f0; }
+}
+
+.entry-block {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.entry-type-mcp_request  { border-left: 3px solid #3b82f6; }
+.entry-type-mcp_response { border-left: 3px solid #22c55e; }
+.entry-type-error        { border-left: 3px solid #ef4444; }
+
 .entry-msg {
   margin: 0 0 0.5rem;
   color: #374151;
