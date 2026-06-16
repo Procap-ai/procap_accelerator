@@ -4,109 +4,78 @@
     <span class="divider">/</span>
     <span class="feature">Quality &amp; Coverage</span>
     <span class="spacer"></span>
-    <button *ngIf="session" class="ghost" (click)="newSession()">+ New repo</button>
   </header>
 
-  <!-- ───────── Entry: URL input + recents ───────── -->
-  <section *ngIf="!session" class="entry">
-    <h1>Improve any public repo</h1>
-    <p class="sub">Paste a public GitHub URL. We’ll run static quality checks, find test-coverage
-      gaps, and suggest fixes you can apply as a PR.</p>
+  <section class="entry">
+    <h1>Repo Quality &amp; Coverage</h1>
+    <p class="sub">Add any public GitHub repo. We score its test coverage and code quality,
+      then let you pick exactly what to improve and ship it as a pull request.</p>
 
     <div class="url-row">
-      <input type="text" [(ngModel)]="repoUrl" (keyup.enter)="onValidate()"
+      <input type="text" [(ngModel)]="repoUrl" (keyup.enter)="onStart()"
              placeholder="https://github.com/owner/repo" autocomplete="off" />
       <button class="secondary" (click)="onValidate()" [disabled]="validating || !repoUrl.trim()">
         {{ validating ? 'Checking…' : 'Validate' }}
       </button>
       <button class="primary" (click)="onStart()" [disabled]="starting || validationOk === false || !repoUrl.trim()">
-        {{ starting ? 'Starting…' : 'Analyze →' }}
+        {{ starting ? 'Starting…' : 'Add &amp; Analyze →' }}
       </button>
     </div>
     <p class="validation" *ngIf="validationMsg" [class.ok]="validationOk" [class.bad]="validationOk === false">
       {{ validationMsg }}
     </p>
+  </section>
 
-    <div class="recents" *ngIf="recents.length">
-      <h3>Recent repos</h3>
-      <ul>
-        <li *ngFor="let r of recents" (click)="openRecent(r)">
-          <span class="repo">{{ r.repoUrl }}</span>
-          <span class="when">{{ r.ts | date:'short' }}</span>
-        </li>
-      </ul>
+  <!-- ───────── Portfolio dashboard ───────── -->
+  <section class="dashboard" *ngIf="analyzed.length">
+    <h3 class="section-title">Portfolio overview</h3>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <app-score-ring [value]="avgOverall" label="Avg. quality" [size]="104"></app-score-ring>
+      </div>
+      <div class="stat-card">
+        <app-donut [current]="avgCoverage" label="Avg. coverage" [size]="118"></app-donut>
+      </div>
+      <div class="stat-card metric">
+        <span class="big">{{ repos.length }}</span>
+        <span class="metric-label">Repos tracked</span>
+      </div>
+      <div class="stat-card metric">
+        <span class="big" [class.warn]="totalIssues > 0">{{ totalIssues }}</span>
+        <span class="metric-label">Open issues across repos</span>
+      </div>
     </div>
   </section>
 
-  <!-- ───────── Active session ───────── -->
-  <section *ngIf="session" class="session">
-    <div class="session-head">
-      <div>
-        <span class="repo">{{ session.repo_url }}</span>
-        <span class="badge" [attr.data-status]="session.status">{{ session.status }}</span>
-        <span class="badge stack" *ngIf="session.stack">{{ session.stack }}</span>
-      </div>
-      <a *ngIf="session.pr_url" class="pr-link" [href]="session.pr_url" target="_blank" rel="noopener">View PR ↗</a>
-    </div>
-
-    <!-- chat / progress feed -->
-    <div class="feed">
-      <div *ngFor="let p of session.progress; trackBy: trackByTs"
-           class="event" [attr.data-type]="p.type" [class.system]="p.source === 'system'">
-        <span class="dot"></span>
-        <span class="text">{{ progressLine(p) }}</span>
-      </div>
-      <div *ngIf="isActive(session.status)" class="event working">
-        <span class="dot pulse"></span><span class="text">Working…</span>
-      </div>
-    </div>
-
-    <!-- report card -->
-    <div class="card analysis" *ngIf="session.analysis as a">
-      <h3>Report card</h3>
-      <p>{{ a.summary }}</p>
-    </div>
-
-    <!-- options -->
-    <div class="options" *ngIf="session.status === 'analyzed' && session.options?.length">
-      <h3>Pick what to improve</h3>
-      <button *ngFor="let o of session.options; trackBy: trackById" class="option"
-              [attr.data-kind]="o.kind" (click)="runOption(o)" [disabled]="busyOption">
-        <div class="option-head">
-          <span class="kind">{{ o.kind }}</span>
-          <span class="effort">{{ o.est_effort }}</span>
+  <!-- ───────── Saved repos ───────── -->
+  <section class="repos" *ngIf="repos.length; else empty">
+    <h3 class="section-title">Your repos</h3>
+    <div class="repo-grid">
+      <div class="repo-card" *ngFor="let r of repos; trackBy: trackByUrl" (click)="open(r)">
+        <div class="repo-card-main">
+          <div class="repo-meta">
+            <span class="repo-name">{{ shortRepo(r.repoUrl) }}</span>
+            <span class="badge" [attr.data-status]="r.status">{{ r.status }}</span>
+            <span class="when">Updated {{ r.ts | date:'short' }}</span>
+          </div>
+          <app-score-ring *ngIf="r.scores" [value]="r.scores.overall" [size]="62"></app-score-ring>
         </div>
-        <div class="option-title">{{ o.title }}</div>
-        <div class="option-desc">{{ o.description }}</div>
-        <div class="option-go">{{ busyOption === o.id ? 'Starting…' : 'Implement →' }}</div>
-      </button>
-    </div>
-
-    <!-- task result + PR -->
-    <div class="card result" *ngIf="session.task_result as t">
-      <h3>Change ready <span class="status-pill" [attr.data-s]="t.status">{{ t.status }}</span></h3>
-      <p>{{ t.summary }}</p>
-      <ul class="files" *ngIf="t.files_changed?.length">
-        <li *ngFor="let f of t.files_changed"><code>{{ f }}</code></li>
-      </ul>
-      <p class="verify" *ngIf="t.verification"><strong>Verified:</strong> {{ t.verification }}</p>
-
-      <div class="pr" *ngIf="!session.pr_url">
-        <button class="primary" (click)="toggleTokenInput()" *ngIf="!showTokenInput">Open Pull Request</button>
-        <div class="token-row" *ngIf="showTokenInput">
-          <input type="password" [(ngModel)]="githubToken"
-                 placeholder="GitHub PAT (public_repo scope)" autocomplete="off" />
-          <button class="primary" (click)="submitPr()">Create PR</button>
-          <button class="ghost" (click)="toggleTokenInput()">Cancel</button>
+        <div class="repo-card-foot" *ngIf="r.scores">
+          <span class="chip">Coverage <b>{{ r.coverage ?? '—' }}%</b></span>
+          <span class="chip">Issues <b>{{ r.issues ?? '—' }}</b></span>
+          <span class="spacer"></span>
+          <button class="link-x" (click)="remove(r, $event)" title="Remove">Remove</button>
         </div>
-        <p class="hint">Token is sent once to open the PR and is never stored on our servers.</p>
-        <p class="validation bad" *ngIf="prError">{{ prError }}</p>
+        <div class="repo-card-foot" *ngIf="!r.scores">
+          <span class="chip muted">Analysis in progress…</span>
+          <span class="spacer"></span>
+          <button class="link-x" (click)="remove(r, $event)" title="Remove">Remove</button>
+        </div>
       </div>
-    </div>
-
-    <div class="card error" *ngIf="session.error">
-      <h3>Something went wrong</h3>
-      <p>{{ session.error }}</p>
     </div>
   </section>
+
+  <ng-template #empty>
+    <p class="empty-hint">No repos yet — add one above to see its quality scorecard.</p>
+  </ng-template>
 </div>

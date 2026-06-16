@@ -2,13 +2,51 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-export interface QualityOption {
+export type EffortLevel = 'low' | 'medium' | 'high';
+export type CategoryKind = 'coverage' | 'lint' | 'ci' | 'refactor' | 'config';
+
+export interface QualityMetric {
+  unit: 'percent' | 'count';
+  current: number;
+  target: number;
+}
+
+/** A selectable node in the fix tree. A node with no `children` is a leaf (the unit of work). */
+export interface QualityItem {
   id: string;
-  kind: 'coverage' | 'lint' | 'ci' | 'refactor' | 'config';
   title: string;
-  description: string;
-  est_effort: 'low' | 'medium' | 'high';
+  description?: string;
+  metric?: QualityMetric;
+  impact: number;            // points added to the parent category headline if done
+  est_effort: EffortLevel;
   target_files?: string[];
+  children?: QualityItem[];
+}
+
+export interface QualityCategory {
+  id: string;
+  title: string;
+  kind: CategoryKind;
+  score: number;             // 0-100
+  metric: QualityMetric;
+  summary?: string;
+  items: QualityItem[];
+}
+
+export interface QualityScores {
+  overall: number;
+  coverage: number;
+  code_quality: number;
+  ci_tooling: number;
+  [k: string]: number;
+}
+
+export interface QualityAnalysis {
+  summary: string;
+  stack?: string;
+  scores: QualityScores;
+  categories: QualityCategory[];
+  metrics?: Record<string, unknown>;
 }
 
 export interface QualityProgressEntry {
@@ -19,15 +57,10 @@ export interface QualityProgressEntry {
   title?: string;
 }
 
-export interface QualityAnalysis {
-  summary: string;
-  metrics?: Record<string, unknown>;
-  stack?: string;
-}
-
 export interface QualityTaskResult {
   status: string;
   summary: string;
+  items_done?: string[];
   files_changed?: string[];
   verification?: string;
   branch?: string;
@@ -42,7 +75,6 @@ export interface QualitySession {
   stack?: string;
   branch?: string;
   progress: QualityProgressEntry[];
-  options: QualityOption[];
   analysis?: QualityAnalysis | null;
   task_result?: QualityTaskResult | null;
   pr_url?: string | null;
@@ -79,9 +111,10 @@ export class QualityService {
     return this.http.get<QualitySession>(`${this.apiBase}/quality/sessions/${sessionId}`);
   }
 
-  runTask(sessionId: string, optionId: string): Observable<{ ok: boolean }> {
+  /** Implement a batch of selected leaf items as a single branch/PR. */
+  runSelections(sessionId: string, itemIds: string[]): Observable<{ ok: boolean }> {
     return this.http.post<{ ok: boolean }>(
-      `${this.apiBase}/quality/sessions/${sessionId}/command`, { type: 'run_task', option_id: optionId });
+      `${this.apiBase}/quality/sessions/${sessionId}/command`, { type: 'run_task', selections: itemIds });
   }
 
   openPr(sessionId: string, githubToken: string): Observable<{ ok: boolean }> {

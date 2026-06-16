@@ -1,0 +1,176 @@
+<div class="quality">
+  <header class="topbar">
+    <a class="brand" routerLink="/">Procap</a>
+    <span class="divider">/</span>
+    <a class="feature link" routerLink="/quality">Quality &amp; Coverage</a>
+    <span class="spacer"></span>
+    <a class="ghost-link" routerLink="/quality">← All repos</a>
+  </header>
+
+  <section *ngIf="session as s" class="session">
+    <div class="session-head">
+      <div>
+        <span class="repo">{{ shortRepo(s.repo_url) }}</span>
+        <span class="badge" [attr.data-status]="s.status">{{ s.status }}</span>
+        <span class="badge stack" *ngIf="s.stack">{{ s.stack }}</span>
+      </div>
+      <a *ngIf="s.pr_url" class="pr-link" [href]="s.pr_url" target="_blank" rel="noopener">View PR ↗</a>
+    </div>
+
+    <!-- progress feed -->
+    <div class="feed" *ngIf="isActive(s.status) || !isAnalyzed">
+      <div *ngFor="let p of s.progress; trackBy: trackByTs"
+           class="event" [attr.data-type]="p.type" [class.system]="p.source === 'system'">
+        <span class="dot"></span>
+        <span class="text">{{ progressLine(p) }}</span>
+      </div>
+      <div *ngIf="isActive(s.status)" class="event working">
+        <span class="dot pulse"></span><span class="text">Working…</span>
+      </div>
+    </div>
+
+    <!-- ───────── Scorecard + plan (after analysis) ───────── -->
+    <ng-container *ngIf="isAnalyzed && analysis as a">
+      <div class="card analysis">
+        <h3>Report card</h3>
+        <p>{{ a.summary }}</p>
+      </div>
+
+      <!-- score rings row -->
+      <div class="score-row">
+        <div class="score-cell hero">
+          <app-score-ring [value]="overallNow" [displayValue]="overallProjected"
+                          label="Overall" [size]="120"></app-score-ring>
+          <span class="delta" *ngIf="overallProjected !== overallNow">
+            {{ overallNow }} → <b>{{ overallProjected }}</b>
+          </span>
+        </div>
+        <div class="score-cell" *ngFor="let c of categories; trackBy: trackById">
+          <app-score-ring [value]="c.score" [displayValue]="projectedScore(c)"
+                          [label]="c.title" [size]="92"></app-score-ring>
+        </div>
+      </div>
+
+      <!-- coverage panel -->
+      <div class="card cover-panel" *ngIf="coverageCategory as cov">
+        <div class="cover-left">
+          <app-donut [current]="coverageNow" [projected]="coverageProjected"
+                     label="Test coverage" [size]="158"></app-donut>
+        </div>
+        <div class="cover-right">
+          <h3>Coverage by feature</h3>
+          <app-bar-list [rows]="coverageBars()"></app-bar-list>
+        </div>
+      </div>
+
+      <!-- plan: tree-select + sticky estimate -->
+      <div class="plan-layout">
+        <div class="plan-tree">
+          <h3 class="section-title">Select what to improve</h3>
+
+          <div class="cat" *ngFor="let c of categories; trackBy: trackById">
+            <div class="cat-head">
+              <span class="cb" [attr.data-state]="nodeState({id:c.id, title:c.title, impact:0, est_effort:'low', children:c.items})"
+                    (click)="toggleNode({id:c.id, title:c.title, impact:0, est_effort:'low', children:c.items})"></span>
+              <span class="cat-title">{{ c.title }}</span>
+              <span class="score-pill" [attr.data-kind]="c.kind">{{ c.score }}/100</span>
+              <span class="cat-sub" *ngIf="c.summary">{{ c.summary }}</span>
+            </div>
+
+            <div class="items">
+              <div class="item" *ngFor="let i of c.items; trackBy: trackById">
+                <div class="item-row" [class.has-kids]="hasChildren(i)">
+                  <span class="cb" [attr.data-state]="nodeState(i)" (click)="toggleNode(i)"></span>
+                  <span class="caret" *ngIf="hasChildren(i)" (click)="toggleExpand(i.id)"
+                        [class.open]="isExpanded(i.id)">▸</span>
+                  <span class="caret-spacer" *ngIf="!hasChildren(i)"></span>
+                  <div class="item-body" (click)="hasChildren(i) ? toggleExpand(i.id) : toggleNode(i)">
+                    <div class="item-title-row">
+                      <span class="item-title">{{ i.title }}</span>
+                      <span class="metric-chip" *ngIf="metricChip(i)">{{ metricChip(i) }}</span>
+                      <span class="impact" *ngIf="i.impact">+{{ i.impact }}</span>
+                      <span class="effort" [attr.data-e]="i.est_effort">{{ i.est_effort }}</span>
+                    </div>
+                    <div class="item-desc" *ngIf="i.description">{{ i.description }}</div>
+                  </div>
+                </div>
+
+                <div class="children" *ngIf="hasChildren(i) && isExpanded(i.id)">
+                  <div class="item-row child" *ngFor="let ch of i.children; trackBy: trackById">
+                    <span class="cb" [attr.data-state]="nodeState(ch)" (click)="toggleNode(ch)"></span>
+                    <span class="caret-spacer"></span>
+                    <div class="item-body" (click)="toggleNode(ch)">
+                      <div class="item-title-row">
+                        <span class="item-title">{{ ch.title }}</span>
+                        <span class="metric-chip" *ngIf="metricChip(ch)">{{ metricChip(ch) }}</span>
+                        <span class="impact" *ngIf="ch.impact">+{{ ch.impact }}</span>
+                        <span class="effort" [attr.data-e]="ch.est_effort">{{ ch.est_effort }}</span>
+                      </div>
+                      <div class="item-desc" *ngIf="ch.description">{{ ch.description }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- sticky estimate -->
+        <aside class="estimate">
+          <div class="estimate-card">
+            <h4>Projected impact</h4>
+            <div class="est-row">
+              <span class="est-label">Overall</span>
+              <span class="est-val">{{ overallNow }} <span class="arrow">→</span> <b [class.up]="overallProjected > overallNow">{{ overallProjected }}</b></span>
+            </div>
+            <div class="est-row" *ngIf="coverageCategory">
+              <span class="est-label">Coverage</span>
+              <span class="est-val">{{ coverageNow }}% <span class="arrow">→</span> <b [class.up]="coverageProjected > coverageNow">{{ coverageProjected }}%</b></span>
+            </div>
+            <div class="est-row" *ngIf="countCategories.length">
+              <span class="est-label">Open issues</span>
+              <span class="est-val">{{ totalIssuesNow }} <span class="arrow">→</span> <b [class.down]="totalIssuesProjected < totalIssuesNow">{{ totalIssuesProjected }}</b></span>
+            </div>
+            <div class="est-row">
+              <span class="est-label">Effort</span>
+              <span class="est-val">{{ effortLabel }}</span>
+            </div>
+            <hr />
+            <div class="est-count">{{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected</div>
+            <button class="primary block" [disabled]="!selectedCount || launching" (click)="implement()">
+              {{ launching ? 'Starting…' : 'Implement selected →' }}
+            </button>
+            <p class="est-hint">Bundled into one branch &amp; pull request.</p>
+          </div>
+        </aside>
+      </div>
+    </ng-container>
+
+    <!-- task result + PR -->
+    <div class="card result" *ngIf="s.task_result as t">
+      <h3>Change ready <span class="status-pill" [attr.data-s]="t.status">{{ t.status }}</span></h3>
+      <p>{{ t.summary }}</p>
+      <ul class="files" *ngIf="t.files_changed?.length">
+        <li *ngFor="let f of t.files_changed"><code>{{ f }}</code></li>
+      </ul>
+      <p class="verify" *ngIf="t.verification"><strong>Verified:</strong> {{ t.verification }}</p>
+
+      <div class="pr" *ngIf="!s.pr_url">
+        <button class="primary" (click)="toggleTokenInput()" *ngIf="!showTokenInput">Open Pull Request</button>
+        <div class="token-row" *ngIf="showTokenInput">
+          <input type="password" [(ngModel)]="githubToken"
+                 placeholder="GitHub PAT (public_repo scope)" autocomplete="off" />
+          <button class="primary" (click)="submitPr()">Create PR</button>
+          <button class="ghost" (click)="toggleTokenInput()">Cancel</button>
+        </div>
+        <p class="hint">Token is sent once to open the PR and is never stored on our servers.</p>
+        <p class="validation bad" *ngIf="prError">{{ prError }}</p>
+      </div>
+    </div>
+
+    <div class="card error" *ngIf="s.error">
+      <h3>Something went wrong</h3>
+      <p>{{ s.error }}</p>
+    </div>
+  </section>
+</div>

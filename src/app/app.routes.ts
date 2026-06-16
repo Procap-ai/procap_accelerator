@@ -8,6 +8,7 @@ import { ConvertJobComponent } from './pages/convert-job/convert-job';
 import { CodeLabComponent } from './pages/samples/code-lab/code-lab';
 import { VisualSearchComponent } from './pages/samples/visual-search/visual-search';
 import { QualityComponent } from './pages/quality/quality';
+import { QualitySessionComponent } from './pages/quality/session/quality-session';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -16,7 +17,7 @@ export const routes: Routes = [
   { path: 'mabl-convert', component: ConvertHomeComponent },
   { path: 'mabl-convert/job/:id', component: ConvertJobComponent },
   { path: 'quality', component: QualityComponent },
-  { path: 'quality/session/:id', component: QualityComponent },
+  { path: 'quality/session/:id', component: QualitySessionComponent },
   // Sample projects (not linked from the home page)
   { path: 'samples/code-lab', component: CodeLabComponent },
   { path: 'samples/visual-search', component: VisualSearchComponent },
