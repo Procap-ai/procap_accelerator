@@ -1,26 +1,27 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import {
-  ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexLegend, ApexPlotOptions, ApexXAxis,
+  ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexFill, ApexLegend, ApexPlotOptions, ApexXAxis,
   NgApexchartsModule,
 } from 'ng-apexcharts';
 
 export interface BarRow {
   label: string;
-  value: number;       // 0..max
-  projected?: number;  // optional "after" value (>= value)
-  caption?: string;    // unused with the charted version, kept for API compatibility
+  value: number;       // current (0..max)
+  projected?: number;  // projected total (>= value); the gain is projected − value
+  caption?: string;    // kept for API compatibility
 }
 
-/** Grouped horizontal bars (ApexCharts) showing each feature's current value and its projected
- *  "after" value. Scaled against `max` (default 100). */
+/** Stacked horizontal bars: each feature shows its CURRENT value (sky) plus the projected GAIN
+ *  (green) stacked on top, so the bar visibly extends as items are selected. */
 @Component({
   selector: 'app-bar-list',
   standalone: true,
   imports: [CommonModule, NgApexchartsModule],
   template: `
     <apx-chart [series]="series" [chart]="chart" [plotOptions]="plotOptions" [xaxis]="xaxis"
-               [colors]="['#bae6fd', '#0ea5e9']" [dataLabels]="dataLabels" [legend]="legend"></apx-chart>
+               [colors]="['#0ea5e9', '#22c55e']" [fill]="fill" [dataLabels]="dataLabels"
+               [legend]="legend"></apx-chart>
   `,
 })
 export class BarListComponent {
@@ -29,18 +30,18 @@ export class BarListComponent {
 
   get series(): ApexAxisChartSeries {
     return [
-      { name: 'Now', data: this.rows.map(r => Math.round(r.value)) },
-      { name: 'After', data: this.rows.map(r => Math.round(r.projected ?? r.value)) },
+      { name: 'Current', data: this.rows.map(r => Math.round(r.value)) },
+      { name: 'Planned gain', data: this.rows.map(r => Math.max(0, Math.round((r.projected ?? r.value) - r.value))) },
     ];
   }
 
   get chart(): ApexChart {
-    return { type: 'bar', height: this.rows.length * 46 + 56, toolbar: { show: false },
-             animations: { enabled: true, speed: 400 }, fontFamily: 'inherit' };
+    return { type: 'bar', stacked: true, height: this.rows.length * 44 + 56,
+             toolbar: { show: false }, animations: { enabled: true, speed: 400 }, fontFamily: 'inherit' };
   }
 
   get plotOptions(): ApexPlotOptions {
-    return { bar: { horizontal: true, borderRadius: 4, barHeight: '70%' } };
+    return { bar: { horizontal: true, borderRadius: 3, borderRadiusApplication: 'end', barHeight: '64%' } };
   }
 
   get xaxis(): ApexXAxis {
@@ -52,6 +53,7 @@ export class BarListComponent {
     };
   }
 
+  get fill(): ApexFill { return { opacity: 1 }; }
   get dataLabels(): ApexDataLabels { return { enabled: false }; }
   get legend(): ApexLegend { return { show: true, position: 'top', horizontalAlign: 'right', fontSize: '12px' }; }
 }

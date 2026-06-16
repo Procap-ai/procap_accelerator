@@ -31,7 +31,7 @@
     <h3 class="section-title">Portfolio overview</h3>
     <div class="stat-grid">
       <div class="stat-card">
-        <app-score-ring [value]="avgOverall" label="Avg. quality" [size]="104"></app-score-ring>
+        <app-score-ring [current]="avgOverall" label="Avg. quality" [size]="104"></app-score-ring>
       </div>
       <div class="stat-card">
         <app-donut [current]="avgCoverage" label="Avg. coverage" [size]="118"></app-donut>
@@ -58,7 +58,7 @@
             <span class="badge" [attr.data-status]="r.status">{{ r.status }}</span>
             <span class="when">Updated {{ r.ts | date:'short' }}</span>
           </div>
-          <app-score-ring *ngIf="r.scores" [value]="r.scores.overall" [size]="62"></app-score-ring>
+          <app-score-ring *ngIf="r.scores" [current]="r.scores.overall" [size]="62"></app-score-ring>
         </div>
         <div class="repo-card-foot" *ngIf="r.scores">
           <span class="chip">Coverage <b>{{ r.coverage ?? '—' }}%</b></span>

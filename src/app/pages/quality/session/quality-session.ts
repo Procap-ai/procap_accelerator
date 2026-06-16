@@ -42,11 +42,13 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) { this.startPolling(id); }
   }
-  ngOnDestroy(): void { this.poll?.unsubscribe(); }
+  ngOnDestroy(): void { this.stopPolling(); }
 
   // ── polling ──
+  // Poll only while the backend is actively working. On any terminal/idle status we fetch once
+  // and stop; the next user action (implement / open PR) restarts polling.
   private startPolling(id: string): void {
-    this.poll?.unsubscribe();
+    this.stopPolling();
     this.poll = interval(4000).pipe(
       startWith(0),
       switchMap(() => this.svc.getSession(id)),
@@ -55,10 +57,15 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
         this.session = s;
         this.syncSnapshot(s);
         if (this.launching && s.status !== 'analyzed') { this.launching = false; }
-        if (s.status === 'pr_open' || s.status === 'failed') { this.poll?.unsubscribe(); }
+        if (!this.isActive(s.status)) { this.stopPolling(); }
       },
       error: () => { /* keep retrying */ },
     });
+  }
+
+  private stopPolling(): void {
+    this.poll?.unsubscribe();
+    this.poll = undefined;
   }
 
   /** Mirror the analysed scorecard into localStorage so the dashboard renders it offline. */

@@ -39,13 +39,10 @@
       <!-- score rings row -->
       <div class="score-row">
         <div class="score-cell hero">
-          <app-score-ring [value]="overallProjected" label="Overall" [size]="120"></app-score-ring>
-          <span class="delta" *ngIf="overallProjected !== overallNow">
-            was {{ overallNow }} → <b>{{ overallProjected }}</b>
-          </span>
+          <app-score-ring [current]="overallNow" [projected]="overallProjected" label="Overall" [size]="120"></app-score-ring>
         </div>
         <div class="score-cell" *ngFor="let c of categories; trackBy: trackById">
-          <app-score-ring [value]="projectedScore(c)" [label]="c.title" [size]="92"></app-score-ring>
+          <app-score-ring [current]="c.score" [projected]="projectedScore(c)" [label]="c.title" [size]="92"></app-score-ring>
         </div>
       </div>
 
