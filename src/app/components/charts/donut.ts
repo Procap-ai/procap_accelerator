@@ -15,11 +15,11 @@ import { Component, Input } from '@angular/core';
         <g [attr.transform]="'rotate(-90 ' + c + ' ' + c + ')'">
           <circle [attr.cx]="c" [attr.cy]="c" [attr.r]="r" class="track" [attr.stroke-width]="stroke" fill="none" />
           <circle *ngIf="projAbove" [attr.cx]="c" [attr.cy]="c" [attr.r]="r" class="proj"
-                  [attr.stroke-width]="stroke" fill="none" stroke-linecap="round"
-                  [attr.stroke-dasharray]="circ" [attr.stroke-dashoffset]="off(projected)" />
-          <circle [attr.cx]="c" [attr.cy]="c" [attr.r]="r" class="cur"
-                  [attr.stroke-width]="stroke" fill="none" stroke-linecap="round"
-                  [attr.stroke-dasharray]="circ" [attr.stroke-dashoffset]="off(current)" />
+                  [attr.stroke-width]="stroke" fill="none" [attr.stroke-linecap]="cap(projected)"
+                  [attr.stroke-dasharray]="len(projected) + ' ' + circ" />
+          <circle *ngIf="current > 0" [attr.cx]="c" [attr.cy]="c" [attr.r]="r" class="cur"
+                  [attr.stroke-width]="stroke" fill="none" [attr.stroke-linecap]="cap(current)"
+                  [attr.stroke-dasharray]="len(current) + ' ' + circ" />
         </g>
       </svg>
       <div class="val">
@@ -34,8 +34,8 @@ import { Component, Input } from '@angular/core';
     .donut { position: relative; }
     svg { width: 100%; height: 100%; display: block; }
     .track { stroke: #e8eef5; }
-    .cur { stroke: #0ea5e9; transition: stroke-dashoffset .5s ease; }
-    .proj { stroke: #bae6fd; transition: stroke-dashoffset .5s ease; }
+    .cur { stroke: #0ea5e9; transition: stroke-dasharray .5s ease; }
+    .proj { stroke: #bae6fd; transition: stroke-dasharray .5s ease; }
     .val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
     .num { font-weight: 800; font-size: 30px; letter-spacing: -.02em; color: #0f172a; line-height: 1; }
     .num small { font-size: 15px; color: #64748b; font-weight: 700; }
@@ -54,6 +54,7 @@ export class DonutComponent {
   get r() { return this.c - this.stroke / 2 - 1; }
   get circ() { return 2 * Math.PI * this.r; }
   get projAbove() { return this.projected > this.current + 0.5; }
-  off(v: number) { return this.circ * (1 - Math.max(0, Math.min(100, v)) / 100); }
+  len(v: number) { return this.circ * Math.max(0, Math.min(100, v)) / 100; }
+  cap(v: number) { return this.len(v) < this.stroke * 1.5 ? 'butt' : 'round'; }
   round(v: number) { return Math.round(v); }
 }

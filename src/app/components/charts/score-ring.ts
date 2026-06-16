@@ -11,10 +11,9 @@ import { Component, Input } from '@angular/core';
       <svg [attr.viewBox]="'0 0 ' + size + ' ' + size">
         <circle [attr.cx]="c" [attr.cy]="c" [attr.r]="r" class="track"
                 [attr.stroke-width]="stroke" fill="none" />
-        <circle [attr.cx]="c" [attr.cy]="c" [attr.r]="r" [attr.stroke]="color"
-                [attr.stroke-width]="stroke" fill="none" stroke-linecap="round"
-                [attr.stroke-dasharray]="circ"
-                [attr.stroke-dashoffset]="offset"
+        <circle *ngIf="pct > 0" [attr.cx]="c" [attr.cy]="c" [attr.r]="r" [attr.stroke]="color"
+                [attr.stroke-width]="stroke" fill="none" [attr.stroke-linecap]="linecap"
+                [attr.stroke-dasharray]="arcLen + ' ' + circ"
                 [attr.transform]="'rotate(-90 ' + c + ' ' + c + ')'" />
       </svg>
       <div class="val">
@@ -29,7 +28,7 @@ import { Component, Input } from '@angular/core';
     .ring { position: relative; }
     svg { width: 100%; height: 100%; display: block; }
     .track { stroke: #e8eef5; }
-    circle { transition: stroke-dashoffset .5s ease, stroke .3s ease; }
+    circle { transition: stroke-dasharray .5s ease, stroke .3s ease; }
     .val { position: absolute; inset: 0; display: flex; align-items: baseline; justify-content: center; }
     .num { font-weight: 800; font-size: 22px; letter-spacing: -.02em; line-height: 1; }
     .suffix { font-size: 11px; color: #64748b; margin-left: 1px; }
@@ -49,7 +48,9 @@ export class ScoreRingComponent {
   get r() { return this.c - this.stroke / 2 - 1; }
   get circ() { return 2 * Math.PI * this.r; }
   get pct() { return Math.max(0, Math.min(100, this.value)); }
-  get offset() { return this.circ * (1 - this.pct / 100); }
+  get arcLen() { return this.circ * this.pct / 100; }
+  /** Round caps look broken on very short arcs (they collapse into a hook); use butt there. */
+  get linecap() { return this.arcLen < this.stroke * 1.5 ? 'butt' : 'round'; }
   get display() { return Math.round(this.displayValue ?? this.value); }
   get color() {
     const v = this.pct;
