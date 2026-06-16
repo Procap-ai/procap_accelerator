@@ -137,7 +137,11 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
   get overallNow(): number { return this.analysis?.scores?.overall ?? 0; }
   get overallProjected(): number {
     if (!this.categories.length) { return this.overallNow; }
-    return Math.round(this.categories.reduce((s, c) => s + this.projectedScore(c), 0) / this.categories.length);
+    // Anchor on the model's reported overall and add the *improvement* (avg projected − avg
+    // current category score) so that with nothing selected projected === now.
+    const base = this.categories.reduce((s, c) => s + c.score, 0) / this.categories.length;
+    const proj = this.categories.reduce((s, c) => s + this.projectedScore(c), 0) / this.categories.length;
+    return Math.round(Math.min(100, this.overallNow + (proj - base)));
   }
   get coverageNow(): number { return Math.round(this.coverageCategory?.metric?.current ?? 0); }
   get coverageProjected(): number {
