@@ -1,48 +1,57 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import {
+  ApexAxisChartSeries, ApexChart, ApexDataLabels, ApexLegend, ApexPlotOptions, ApexXAxis,
+  NgApexchartsModule,
+} from 'ng-apexcharts';
 
 export interface BarRow {
   label: string;
   value: number;       // 0..max
-  projected?: number;  // optional overlay (>= value)
-  caption?: string;    // right-aligned text (e.g. "10% → 90%")
+  projected?: number;  // optional "after" value (>= value)
+  caption?: string;    // unused with the charted version, kept for API compatibility
 }
 
-/** Labelled horizontal bars. `value` is filled solid; `projected` (if larger) shows as a lighter
- *  overlay so live estimates read at a glance. Values are scaled against `max` (default 100). */
+/** Grouped horizontal bars (ApexCharts) showing each feature's current value and its projected
+ *  "after" value. Scaled against `max` (default 100). */
 @Component({
   selector: 'app-bar-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgApexchartsModule],
   template: `
-    <div class="bars">
-      <div class="row" *ngFor="let r of rows">
-        <div class="top">
-          <span class="lbl">{{ r.label }}</span>
-          <span class="cap" *ngIf="r.caption">{{ r.caption }}</span>
-        </div>
-        <div class="track">
-          <span class="proj" *ngIf="(r.projected ?? 0) > r.value"
-                [style.width.%]="pct(r.projected!)"></span>
-          <span class="fill" [style.width.%]="pct(r.value)"></span>
-        </div>
-      </div>
-    </div>
+    <apx-chart [series]="series" [chart]="chart" [plotOptions]="plotOptions" [xaxis]="xaxis"
+               [colors]="['#bae6fd', '#0ea5e9']" [dataLabels]="dataLabels" [legend]="legend"></apx-chart>
   `,
-  styles: [`
-    :host { display: block; }
-    .row { margin-bottom: 12px; }
-    .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; gap: 10px; }
-    .lbl { font-size: 13.5px; color: #334155; font-weight: 600; }
-    .cap { font-size: 12px; color: #64748b; white-space: nowrap; }
-    .track { position: relative; height: 9px; border-radius: 6px; background: #eef3f8; overflow: hidden; }
-    .fill, .proj { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; transition: width .5s ease; }
-    .proj { background: #bae6fd; }
-    .fill { background: #0ea5e9; }
-  `],
 })
 export class BarListComponent {
   @Input() rows: BarRow[] = [];
   @Input() max = 100;
-  pct(v: number) { return Math.max(0, Math.min(100, (v / this.max) * 100)); }
+
+  get series(): ApexAxisChartSeries {
+    return [
+      { name: 'Now', data: this.rows.map(r => Math.round(r.value)) },
+      { name: 'After', data: this.rows.map(r => Math.round(r.projected ?? r.value)) },
+    ];
+  }
+
+  get chart(): ApexChart {
+    return { type: 'bar', height: this.rows.length * 46 + 56, toolbar: { show: false },
+             animations: { enabled: true, speed: 400 }, fontFamily: 'inherit' };
+  }
+
+  get plotOptions(): ApexPlotOptions {
+    return { bar: { horizontal: true, borderRadius: 4, barHeight: '70%' } };
+  }
+
+  get xaxis(): ApexXAxis {
+    return {
+      categories: this.rows.map(r => r.label),
+      max: this.max,
+      labels: { formatter: (v: string) => `${v}%`, style: { colors: '#94a3b8' } },
+      axisBorder: { show: false }, axisTicks: { show: false },
+    };
+  }
+
+  get dataLabels(): ApexDataLabels { return { enabled: false }; }
+  get legend(): ApexLegend { return { show: true, position: 'top', horizontalAlign: 'right', fontSize: '12px' }; }
 }

@@ -1,46 +1,24 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import { ApexChart, ApexPlotOptions, NgApexchartsModule } from 'ng-apexcharts';
 
-/**
- * Coverage-style donut. Draws the current fill solid; if `projected` > current, the gain is
- * shown as a lighter overlay arc so the user sees the live "after selection" state.
- */
+/** Coverage gauge (ApexCharts radialBar). Shows current %; if a higher `projected` is given it
+ *  is surfaced as a "→ N%" sub-label. */
 @Component({
   selector: 'app-donut',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgApexchartsModule],
   template: `
-    <div class="donut" [style.width.px]="size" [style.height.px]="size">
-      <svg [attr.viewBox]="'0 0 ' + size + ' ' + size">
-        <g [attr.transform]="'rotate(-90 ' + c + ' ' + c + ')'">
-          <circle [attr.cx]="c" [attr.cy]="c" [attr.r]="r" class="track" [attr.stroke-width]="stroke" fill="none" />
-          <circle *ngIf="projAbove" [attr.cx]="c" [attr.cy]="c" [attr.r]="r" class="proj"
-                  [attr.stroke-width]="stroke" fill="none" [attr.stroke-linecap]="cap(projected)"
-                  [attr.stroke-dasharray]="len(projected) + ' ' + circ" />
-          <circle *ngIf="current > 0" [attr.cx]="c" [attr.cy]="c" [attr.r]="r" class="cur"
-                  [attr.stroke-width]="stroke" fill="none" [attr.stroke-linecap]="cap(current)"
-                  [attr.stroke-dasharray]="len(current) + ' ' + circ" />
-        </g>
-      </svg>
-      <div class="val">
-        <span class="num">{{ round(current) }}<small>%</small></span>
-        <span class="proj-num" *ngIf="projAbove">→ {{ round(projected) }}%</span>
-        <span class="cap" *ngIf="label">{{ label }}</span>
-      </div>
+    <div class="donut-wrap" [style.width.px]="size" [style.height.px]="size">
+      <apx-chart [series]="[round(current)]" [chart]="chart" [plotOptions]="plotOptions"
+                 [colors]="['#0ea5e9']" [labels]="[subLabel]"></apx-chart>
     </div>
+    <div class="cap" *ngIf="label">{{ label }}</div>
   `,
   styles: [`
-    :host { display: inline-block; }
-    .donut { position: relative; }
-    svg { width: 100%; height: 100%; display: block; }
-    .track { stroke: #e8eef5; }
-    .cur { stroke: #0ea5e9; transition: stroke-dasharray .5s ease; }
-    .proj { stroke: #bae6fd; transition: stroke-dasharray .5s ease; }
-    .val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
-    .num { font-weight: 800; font-size: 30px; letter-spacing: -.02em; color: #0f172a; line-height: 1; }
-    .num small { font-size: 15px; color: #64748b; font-weight: 700; }
-    .proj-num { font-size: 13px; font-weight: 700; color: #0284c7; }
-    .cap { font-size: 11px; color: #64748b; font-weight: 600; margin-top: 2px; }
+    :host { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+    .donut-wrap { position: relative; }
+    .cap { font-size: 12px; color: #64748b; font-weight: 600; text-align: center; }
   `],
 })
 export class DonutComponent {
@@ -49,12 +27,26 @@ export class DonutComponent {
   @Input() label = '';
   @Input() size = 150;
 
-  get stroke() { return Math.max(10, Math.round(this.size * 0.11)); }
-  get c() { return this.size / 2; }
-  get r() { return this.c - this.stroke / 2 - 1; }
-  get circ() { return 2 * Math.PI * this.r; }
+  round(v: number) { return Math.round(Math.max(0, Math.min(100, v))); }
   get projAbove() { return this.projected > this.current + 0.5; }
-  len(v: number) { return this.circ * Math.max(0, Math.min(100, v)) / 100; }
-  cap(v: number) { return this.len(v) < this.stroke * 1.5 ? 'butt' : 'round'; }
-  round(v: number) { return Math.round(v); }
+  get subLabel() { return this.projAbove ? `→ ${this.round(this.projected)}%` : ''; }
+
+  get chart(): ApexChart {
+    return { type: 'radialBar', height: this.size, width: this.size, sparkline: { enabled: true },
+             animations: { enabled: true, speed: 450 } };
+  }
+
+  get plotOptions(): ApexPlotOptions {
+    return {
+      radialBar: {
+        hollow: { size: '56%' },
+        track: { background: '#e8eef5', strokeWidth: '100%' },
+        dataLabels: {
+          name: { show: this.projAbove, offsetY: 20, fontSize: '13px', fontWeight: 700, color: '#0284c7' },
+          value: { show: true, offsetY: -6, fontSize: `${Math.round(this.size * 0.2)}px`,
+                   fontWeight: 800, color: '#0f172a', formatter: () => `${this.round(this.current)}%` },
+        },
+      },
+    };
+  }
 }
