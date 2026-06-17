@@ -8,16 +8,18 @@ import { BarListComponent, BarRow } from '../../../components/charts/bar-list';
 import { DonutComponent } from '../../../components/charts/donut';
 import { ScoreRingComponent } from '../../../components/charts/score-ring';
 import {
-  QualityAnalysis, QualityCategory, QualityItem, QualityService, QualitySession,
+  Contributor, QualityAnalysis, QualityCategory, QualityItem, QualityService, QualitySession,
+  QualitySignals, RecentCommit, RiskFile,
 } from '../../../services/quality.service';
 import { RepoStore } from '../../../services/repo-store';
+import { SparkComponent } from '../../../components/charts/spark';
 
 const ACTIVE_STATUSES = ['created', 'analyzing', 'working', 'opening_pr'];
 const EFFORT_WEIGHT: Record<string, number> = { low: 1, medium: 2, high: 3 };
 
 @Component({
   selector: 'app-quality-session',
-  imports: [CommonModule, FormsModule, RouterModule, ScoreRingComponent, DonutComponent, BarListComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ScoreRingComponent, DonutComponent, BarListComponent, SparkComponent],
   templateUrl: './quality-session.html',
   styleUrl: '../quality.scss',
 })
@@ -84,6 +86,26 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
   get analysis(): QualityAnalysis | null { return this.session?.analysis ?? null; }
   get categories(): QualityCategory[] { return this.analysis?.categories ?? []; }
   get isAnalyzed(): boolean { return this.session?.status === 'analyzed'; }
+
+  // ── git/repo signals (Repository Health enrichment) ──
+  get signals(): QualitySignals | null { return this.analysis?.signals ?? null; }
+  get contributors(): Contributor[] { return this.signals?.contributors ?? []; }
+  get riskFiles(): RiskFile[] { return this.signals?.risk_files ?? []; }
+  get recentCommits(): RecentCommit[] { return this.signals?.recent_commits ?? []; }
+  get velocity(): number[] { return this.signals?.velocity ?? []; }
+  riskColor(v: number): string { return v >= 66 ? '#ef4444' : v >= 33 ? '#f59e0b' : '#22c55e'; }
+  avatarColor(name: string): string {
+    const palette = ['#38bdf8', '#22c55e', '#f59e0b', '#a78bfa', '#fb7185', '#34d399'];
+    let h = 0; for (const c of name || '') { h = (h * 31 + c.charCodeAt(0)) >>> 0; }
+    return palette[h % palette.length];
+  }
+  initials(name: string): string { return (name || '?').split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase(); }
+  ago(ts: number): string {
+    const d = Math.max(0, Date.now() / 1000 - ts);
+    if (d < 3600) { return `${Math.round(d / 60)}m`; }
+    if (d < 86400) { return `${Math.round(d / 3600)}h`; }
+    return `${Math.round(d / 86400)}d`;
+  }
 
   // ── tree helpers ──
   leaves(node: QualityItem): QualityItem[] {

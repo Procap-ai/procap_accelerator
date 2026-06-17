@@ -14,7 +14,10 @@
         <span class="badge" [attr.data-status]="s.status">{{ s.status }}</span>
         <span class="badge stack" *ngIf="s.stack">{{ s.stack }}</span>
       </div>
-      <a *ngIf="s.pr_url" class="pr-link" [href]="s.pr_url" target="_blank" rel="noopener">View PR ↗</a>
+      <div style="display:flex;gap:10px;align-items:center">
+        <a *ngIf="isAnalyzed" class="ghost-link" [routerLink]="['/quality/genome', s.session_id]">Business view →</a>
+        <a *ngIf="s.pr_url" class="pr-link" [href]="s.pr_url" target="_blank" rel="noopener">View PR ↗</a>
+      </div>
     </div>
 
     <!-- progress feed -->
@@ -55,6 +58,43 @@
         <div class="cover-right">
           <h3>Coverage by feature</h3>
           <app-bar-list [rows]="coverageBars()"></app-bar-list>
+        </div>
+      </div>
+
+      <!-- repository signals (deterministic from git history) -->
+      <div class="fleet-grid" *ngIf="signals as sig" style="margin-bottom:18px">
+        <div class="panel">
+          <h3>Risk hotspots <span class="rule-desc" style="text-transform:none;letter-spacing:0">churn × low coverage</span></h3>
+          <div class="hot-row" *ngFor="let f of riskFiles">
+            <code>{{ f.path }}</code>
+            <span class="risk-bar"><span class="rf" [style.width.%]="f.risk" [style.background]="riskColor(f.risk)"></span></span>
+            <span class="churn">{{ f.churn }} Δ<span *ngIf="f.coverage != null"> · {{ f.coverage }}%</span></span>
+          </div>
+          <p class="empty-hint" *ngIf="!riskFiles.length" style="margin:4px 0;font-size:13px">No churn signal available.</p>
+        </div>
+        <div>
+          <div class="panel">
+            <h3>Contributors <span class="rule-desc" style="text-transform:none;letter-spacing:0">last {{ sig.commit_count }} commits</span></h3>
+            <div class="lb-row" *ngFor="let c of contributors">
+              <span class="av" [style.background]="avatarColor(c.name)">{{ initials(c.name) }}</span>
+              <span class="lb-name">{{ c.name }}</span>
+              <span class="lb-commits">{{ c.commits }}</span>
+            </div>
+            <p class="empty-hint" *ngIf="!contributors.length" style="margin:4px 0;font-size:13px">No git history.</p>
+          </div>
+          <div class="panel" *ngIf="velocity.length">
+            <h3 style="display:flex;align-items:center;justify-content:space-between">Commit velocity
+              <app-spark [data]="velocity" color="#38bdf8" [width]="110" [height]="30"></app-spark></h3>
+            <span class="rule-desc" style="text-transform:none;letter-spacing:0">commits/week over the last {{ velocity.length }} weeks</span>
+          </div>
+          <div class="panel" *ngIf="recentCommits.length">
+            <h3>Recent activity</h3>
+            <div class="ledger-row" *ngFor="let c of recentCommits.slice(0, 6)">
+              <span class="when">{{ ago(c.ts) }}</span>
+              <span class="who">{{ c.author }}</span>
+              <span class="what">{{ c.subject }}</span>
+            </div>
+          </div>
         </div>
       </div>
 

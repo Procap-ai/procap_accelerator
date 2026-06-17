@@ -1,81 +1,92 @@
-<div class="quality">
-  <header class="topbar">
-    <a class="brand" routerLink="/">Procap</a>
-    <span class="divider">/</span>
-    <span class="feature">Quality &amp; Coverage</span>
-    <span class="spacer"></span>
-  </header>
+<div class="obs-topbar">
+  <h1>Fleet quality index</h1>
+  <span class="sub">Live aggregate across {{ repoCount }} repositor{{ repoCount === 1 ? 'y' : 'ies' }}</span>
+  <span class="spacer"></span>
+  <button class="secondary" (click)="showAdd = !showAdd">{{ showAdd ? 'Close' : '+ Add repo' }}</button>
+</div>
 
-  <section class="entry">
-    <h1>Repo Quality &amp; Coverage</h1>
-    <p class="sub">Add any public GitHub repo. We score its test coverage and code quality,
-      then let you pick exactly what to improve and ship it as a pull request.</p>
+<!-- add-repo -->
+<div class="panel" *ngIf="showAdd">
+  <div class="url-row">
+    <input type="text" [(ngModel)]="repoUrl" (keyup.enter)="onStart()"
+           placeholder="https://github.com/owner/repo" autocomplete="off" />
+    <button class="secondary" (click)="onValidate()" [disabled]="validating || !repoUrl.trim()">
+      {{ validating ? 'Checking…' : 'Validate' }}</button>
+    <button class="primary" (click)="onStart()" [disabled]="starting || validationOk === false || !repoUrl.trim()">
+      {{ starting ? 'Starting…' : 'Add & Analyze →' }}</button>
+  </div>
+  <p class="validation" *ngIf="validationMsg" [class.ok]="validationOk" [class.bad]="validationOk === false">
+    {{ validationMsg }}</p>
+</div>
 
-    <div class="url-row">
-      <input type="text" [(ngModel)]="repoUrl" (keyup.enter)="onStart()"
-             placeholder="https://github.com/owner/repo" autocomplete="off" />
-      <button class="secondary" (click)="onValidate()" [disabled]="validating || !repoUrl.trim()">
-        {{ validating ? 'Checking…' : 'Validate' }}
-      </button>
-      <button class="primary" (click)="onStart()" [disabled]="starting || validationOk === false || !repoUrl.trim()">
-        {{ starting ? 'Starting…' : 'Add &amp; Analyze →' }}
-      </button>
-    </div>
-    <p class="validation" *ngIf="validationMsg" [class.ok]="validationOk" [class.bad]="validationOk === false">
-      {{ validationMsg }}
-    </p>
-  </section>
+<!-- KPI row -->
+<div class="kpi-row">
+  <div class="kpi">
+    <span class="val" [ngClass]="band(avgOverall)">{{ avgOverall }}</span>
+    <span class="lbl">Avg. quality index</span>
+  </div>
+  <div class="kpi">
+    <span class="val sky">{{ avgCoverage }}%</span>
+    <span class="lbl">Avg. test coverage</span>
+  </div>
+  <div class="kpi">
+    <span class="val" [class.warn]="totalIssues > 0">{{ totalIssues }}</span>
+    <span class="lbl">Open issues across fleet</span>
+  </div>
+  <div class="kpi">
+    <span class="val good">${{ totalSavings | number }}<span class="est-tag">est</span></span>
+    <span class="lbl">Maintenance saved</span>
+  </div>
+</div>
 
-  <!-- ───────── Portfolio dashboard ───────── -->
-  <section class="dashboard" *ngIf="analyzed.length">
-    <h3 class="section-title">Portfolio overview</h3>
-    <div class="stat-grid">
-      <div class="stat-card">
-        <app-score-ring [current]="avgOverall" label="Avg. quality" [size]="104"></app-score-ring>
-      </div>
-      <div class="stat-card">
-        <app-donut [current]="avgCoverage" label="Avg. coverage" [size]="118"></app-donut>
-      </div>
-      <div class="stat-card metric">
-        <span class="big">{{ repos.length }}</span>
-        <span class="metric-label">Repos tracked</span>
-      </div>
-      <div class="stat-card metric">
-        <span class="big" [class.warn]="totalIssues > 0">{{ totalIssues }}</span>
-        <span class="metric-label">Open issues across repos</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ───────── Saved repos ───────── -->
-  <section class="repos" *ngIf="repos.length; else empty">
-    <h3 class="section-title">Your repos</h3>
-    <div class="repo-grid">
-      <div class="repo-card" *ngFor="let r of repos; trackBy: trackByUrl" (click)="open(r)">
-        <div class="repo-card-main">
-          <div class="repo-meta">
-            <span class="repo-name">{{ shortRepo(r.repoUrl) }}</span>
-            <span class="badge" [attr.data-status]="r.status">{{ r.status }}</span>
-            <span class="when">Updated {{ r.ts | date:'short' }}</span>
+<div class="fleet-grid">
+  <!-- repositories -->
+  <div>
+    <div class="panel">
+      <h3>Repositories <span class="est-tag" style="color:var(--muted);background:none;border:none" *ngIf="loading">loading…</span></h3>
+      <div class="repo-rows" *ngIf="repos.length; else noRepos">
+        <div class="repo-row" *ngFor="let r of repos; let i = index; trackBy: trackByUrl" (click)="open(r)">
+          <span class="score-dot" *ngIf="r.scores"
+                [style.background]="bandColor(r.scores.overall) + '22'"
+                [style.color]="bandColor(r.scores.overall)">{{ r.scores.overall }}</span>
+          <span class="score-dot" *ngIf="!r.scores" style="background:var(--panel-3);color:var(--muted)">··</span>
+          <div>
+            <div class="rr-name">{{ shortRepo(r.repoUrl) }}</div>
+            <div class="rr-stack">{{ r.status }}<span *ngIf="r.contributors"> · {{ r.contributors }} contributors</span></div>
           </div>
-          <app-score-ring *ngIf="r.scores" [current]="r.scores.overall" [size]="62"></app-score-ring>
-        </div>
-        <div class="repo-card-foot" *ngIf="r.scores">
-          <span class="chip">Coverage <b>{{ r.coverage ?? '—' }}%</b></span>
-          <span class="chip">Issues <b>{{ r.issues ?? '—' }}</b></span>
-          <span class="spacer"></span>
-          <button class="link-x" (click)="remove(r, $event)" title="Remove">Remove</button>
-        </div>
-        <div class="repo-card-foot" *ngIf="!r.scores">
-          <span class="chip muted">Analysis in progress…</span>
-          <span class="spacer"></span>
-          <button class="link-x" (click)="remove(r, $event)" title="Remove">Remove</button>
+          <div class="rr-metrics">
+            <app-spark [data]="demoSpark(i + 1)" [color]="bandColor(r.scores?.overall || 50)"></app-spark>
+            <div class="rr-metric"><b style="color:var(--accent)">{{ r.coverage ?? '—' }}%</b><span>cov</span></div>
+            <div class="rr-metric"><b [style.color]="(r.issues || 0) > 0 ? 'var(--warn)' : 'var(--text)'">{{ r.issues ?? '—' }}</b><span>issues</span></div>
+            <button class="link-x ghost" (click)="remove(r, $event)" title="Remove" style="padding:2px 6px">✕</button>
+          </div>
         </div>
       </div>
+      <ng-template #noRepos>
+        <p class="empty-hint" style="margin:6px 0">No repos yet — use <b>+ Add repo</b> to analyze your first repository.</p>
+      </ng-template>
     </div>
-  </section>
+  </div>
 
-  <ng-template #empty>
-    <p class="empty-hint">No repos yet — add one above to see its quality scorecard.</p>
-  </ng-template>
+  <!-- right rail -->
+  <div>
+    <div class="panel">
+      <h3>Top engineers</h3>
+      <div class="lb-row" *ngFor="let e of engineers">
+        <span class="av" [style.background]="avatarColor(e.name)">{{ initials(e.name) }}</span>
+        <span class="lb-name">{{ e.name }}</span>
+        <span class="lb-commits">{{ e.commits }} commits</span>
+      </div>
+      <p class="empty-hint" *ngIf="!engineers.length" style="margin:4px 0;font-size:13px">Analyze a repo to populate.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Rule library</h3>
+      <div class="rule-row" *ngFor="let rule of rules">
+        <code>{{ rule.code }}</code>
+        <span class="rule-desc">{{ rule.desc }}</span>
+        <span class="toggle" [class.on]="rule.on" (click)="toggleRule(rule)"></span>
+      </div>
+    </div>
+  </div>
 </div>

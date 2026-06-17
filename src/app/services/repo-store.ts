@@ -10,6 +10,8 @@ export interface SavedRepo {
   scores?: QualityScores;   // last analysed score snapshot
   coverage?: number;        // headline coverage %
   issues?: number;          // headline open-issue count
+  contributors?: number;    // distinct recent contributors
+  savings?: number;         // cumulative est. savings (USD)
   ts: number;               // last updated (ms)
 }
 

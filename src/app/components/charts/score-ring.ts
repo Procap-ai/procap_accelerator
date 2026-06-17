@@ -6,7 +6,7 @@ import {
 } from 'ng-apexcharts';
 
 const GAIN = '#22c55e';   // green — the improvement that selection will add
-const TRACK = '#eef3f8';
+const TRACK = '#1b232e';  // dark track
 
 /** 0-100 score gauge (ApexCharts donut). The ring shows the CURRENT score as a solid band and the
  *  projected GAIN as a separate green segment, so the chart visibly grows as items are selected. */
@@ -32,8 +32,8 @@ const TRACK = '#eef3f8';
     .center { position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; pointer-events: none; }
     .num { font-weight: 800; letter-spacing: -.02em; line-height: 1; }
-    .was { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-    .cap { font-size: 12px; color: #64748b; font-weight: 600; text-align: center; }
+    .was { font-size: 11px; color: #7d8794; margin-top: 2px; }
+    .cap { font-size: 12px; color: #aeb9c6; font-weight: 600; text-align: center; }
   `],
 })
 export class ScoreRingComponent {

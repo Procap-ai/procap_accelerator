@@ -20,8 +20,8 @@ export interface BarRow {
   imports: [CommonModule, NgApexchartsModule],
   template: `
     <apx-chart [series]="series" [chart]="chart" [plotOptions]="plotOptions" [xaxis]="xaxis"
-               [colors]="['#0ea5e9', '#22c55e']" [fill]="fill" [dataLabels]="dataLabels"
-               [legend]="legend"></apx-chart>
+               [colors]="['#38bdf8', '#22c55e']" [fill]="fill" [dataLabels]="dataLabels"
+               [legend]="legend" [grid]="grid" [tooltip]="tooltip"></apx-chart>
   `,
 })
 export class BarListComponent {
@@ -55,5 +55,10 @@ export class BarListComponent {
 
   get fill(): ApexFill { return { opacity: 1 }; }
   get dataLabels(): ApexDataLabels { return { enabled: false }; }
-  get legend(): ApexLegend { return { show: true, position: 'top', horizontalAlign: 'right', fontSize: '12px' }; }
+  get legend(): ApexLegend {
+    return { show: true, position: 'top', horizontalAlign: 'right', fontSize: '12px',
+             labels: { colors: '#aeb9c6' } };
+  }
+  get grid() { return { borderColor: '#232b36', strokeDashArray: 3 }; }
+  get tooltip() { return { theme: 'dark', y: { formatter: (v: number) => `${v}%` } }; }
 }

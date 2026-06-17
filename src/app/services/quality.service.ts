@@ -19,9 +19,25 @@ export interface QualityItem {
   metric?: QualityMetric;
   impact: number;            // points added to the parent category headline if done
   est_effort: EffortLevel;
+  confidence?: number;       // 0-100, model's certainty this is a real gap (predicted-gaps view)
+  tags?: string[];           // short labels e.g. ['playwright','code-to-journey']
   target_files?: string[];
   children?: QualityItem[];
 }
+
+// ── deterministic git/repo signals attached by the worker (grounds the reporting screens) ──
+export interface Contributor { name: string; commits: number; last_ts: number; }
+export interface RecentCommit { author: string; subject: string; ts: number; }
+export interface RiskFile { path: string; churn: number; coverage: number | null; risk: number; }
+export interface QualitySignals {
+  contributors: Contributor[];
+  velocity: number[];        // commits/week, oldest→newest
+  recent_commits: RecentCommit[];
+  risk_files: RiskFile[];
+  commit_count: number;
+}
+
+export interface SavingsEst { items: number; hours: number; usd: number; rate: number; }
 
 export interface QualityCategory {
   id: string;
@@ -46,8 +62,41 @@ export interface QualityAnalysis {
   stack?: string;
   scores: QualityScores;
   categories: QualityCategory[];
+  signals?: QualitySignals;
   metrics?: Record<string, unknown>;
 }
+
+// ── fleet roll-up (GET /quality/fleet) ──
+export interface FleetRepo {
+  repo: string;
+  session_id: string;
+  stack?: string;
+  overall: number;
+  coverage: number;
+  issues: number;
+  contributors: number;
+  savings_est: number;
+  ts: number;
+}
+export interface FleetAggregate {
+  repo_count: number;
+  avg_overall: number;
+  avg_coverage: number;
+  total_issues: number;
+  total_savings_est: number;
+  contributors: number;
+}
+export interface FleetResponse { repos: FleetRepo[]; aggregate: FleetAggregate; }
+
+export interface Snapshot {
+  ts: number;
+  kind: string;
+  scores: QualityScores;
+  coverage: number;
+  issues: number;
+  savings_est: SavingsEst | null;
+}
+export interface SnapshotsResponse { repo: string; snapshots: Snapshot[]; }
 
 export interface QualityProgressEntry {
   ts: number;
@@ -109,6 +158,16 @@ export class QualityService {
 
   getSession(sessionId: string): Observable<QualitySession> {
     return this.http.get<QualitySession>(`${this.apiBase}/quality/sessions/${sessionId}`);
+  }
+
+  /** Fleet aggregate roll-up across all analysed repos (from the snapshots time-series). */
+  getFleet(): Observable<FleetResponse> {
+    return this.http.get<FleetResponse>(`${this.apiBase}/quality/fleet`);
+  }
+
+  /** Time-series of scorecard snapshots for one repo (owner/repo). */
+  getSnapshots(repo: string): Observable<SnapshotsResponse> {
+    return this.http.get<SnapshotsResponse>(`${this.apiBase}/quality/snapshots/${repo}`);
   }
 
   /** Implement a batch of selected leaf items as a single branch/PR. */

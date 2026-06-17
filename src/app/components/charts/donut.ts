@@ -5,9 +5,9 @@ import {
   ApexTooltip, NgApexchartsModule,
 } from 'ng-apexcharts';
 
-const CUR = '#0ea5e9';    // sky — current coverage
+const CUR = '#38bdf8';    // sky — current coverage
 const GAIN = '#22c55e';   // green — projected gain from the current selection
-const TRACK = '#eef3f8';
+const TRACK = '#1b232e';  // dark track
 
 /** Coverage donut: current coverage as a solid sky arc, the projected gain as a separate green arc,
  *  remainder as track. Center shows current % and (when a gain exists) the projected %. */
@@ -32,10 +32,10 @@ const TRACK = '#eef3f8';
     .donut-wrap { position: relative; }
     .center { position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; pointer-events: none; }
-    .num { font-weight: 800; letter-spacing: -.02em; color: #0f172a; line-height: 1; }
-    .num small { font-size: .55em; color: #64748b; font-weight: 700; }
-    .proj { font-size: 13px; font-weight: 700; color: #16a34a; margin-top: 3px; }
-    .cap { font-size: 12px; color: #64748b; font-weight: 600; text-align: center; }
+    .num { font-weight: 800; letter-spacing: -.02em; color: #e6edf3; line-height: 1; }
+    .num small { font-size: .55em; color: #8b98a8; font-weight: 700; }
+    .proj { font-size: 13px; font-weight: 700; color: #22c55e; margin-top: 3px; }
+    .cap { font-size: 12px; color: #aeb9c6; font-weight: 600; text-align: center; }
   `],
 })
 export class DonutComponent {
