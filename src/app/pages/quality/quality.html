@@ -22,20 +22,23 @@
 <!-- KPI row -->
 <div class="kpi-row">
   <div class="kpi">
-    <span class="val" [ngClass]="band(avgOverall)">{{ avgOverall }}</span>
-    <span class="lbl">Avg. quality index</span>
+    <span class="val" [ngClass]="band(baselineHealth)">{{ baselineHealth }}</span>
+    <span class="lbl">Baseline health
+      <span class="tag" *ngIf="hasScan" style="background:#22384a;color:#7dd3fc">measured</span></span>
   </div>
   <div class="kpi">
     <span class="val sky">{{ avgCoverage }}%</span>
     <span class="lbl">Avg. test coverage</span>
   </div>
   <div class="kpi">
-    <span class="val" [class.warn]="totalIssues > 0">{{ totalIssues }}</span>
-    <span class="lbl">Open issues across fleet</span>
+    <span class="val" [class.warn]="totalFlaky > 0">{{ totalFlaky }}</span>
+    <span class="lbl">Est. flaky tests
+      <span class="tag" *ngIf="hasScan" style="background:#3a2f1a;color:#f5c87a">modelled</span></span>
   </div>
   <div class="kpi">
-    <span class="val good">${{ totalSavings | number }}<span class="est-tag">est</span></span>
-    <span class="lbl">Maintenance saved</span>
+    <span class="val bad">${{ totalRisk | number }}</span>
+    <span class="lbl">Maintenance risk/yr
+      <span class="tag" *ngIf="hasScan" style="background:#3a2f1a;color:#f5c87a">modelled</span></span>
   </div>
 </div>
 

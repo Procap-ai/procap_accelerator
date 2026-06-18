@@ -113,6 +113,10 @@ export interface FleetRepo {
   contributors: number;
   savings_est: number;
   ts: number;
+  scan_score?: number | null;   // grounded baseline health (deck)
+  scan_findings?: number;
+  risk_dollars?: number;        // modelled annual maintenance risk
+  est_flaky?: number;
 }
 export interface FleetAggregate {
   repo_count: number;
@@ -121,6 +125,9 @@ export interface FleetAggregate {
   total_issues: number;
   total_savings_est: number;
   contributors: number;
+  avg_scan_score?: number | null;
+  total_risk_dollars?: number;
+  total_est_flaky?: number;
 }
 export interface FleetResponse { repos: FleetRepo[]; aggregate: FleetAggregate; }
 
@@ -131,6 +138,9 @@ export interface Snapshot {
   coverage: number;
   issues: number;
   savings_est: SavingsEst | null;
+  scan_score?: number | null;
+  risk_dollars?: number;
+  est_flaky?: number;
 }
 export interface SnapshotsResponse { repo: string; snapshots: Snapshot[]; }
 

@@ -30,7 +30,8 @@ export class QualityComponent implements OnInit {
 
   repos: SavedRepo[] = [];
   fleet: FleetRepo[] = [];          // server-side snapshots (authoritative)
-  agg = { avg_overall: 0, avg_coverage: 0, total_issues: 0, total_savings_est: 0, repo_count: 0, contributors: 0 };
+  agg = { avg_overall: 0, avg_coverage: 0, total_issues: 0, total_savings_est: 0, repo_count: 0,
+          contributors: 0, avg_scan_score: null as number | null, total_risk_dollars: 0, total_est_flaky: 0 };
   engineers: Engineer[] = [];
   loading = true;
 
@@ -87,6 +88,11 @@ export class QualityComponent implements OnInit {
   get avgCoverage(): number { return this.agg.avg_coverage || this.localAvg(r => r.coverage || 0); }
   get totalIssues(): number { return this.agg.total_issues || this.analyzed.reduce((s, r) => s + (r.issues || 0), 0); }
   get totalSavings(): number { return this.agg.total_savings_est || this.analyzed.reduce((s, r) => s + (r.savings || 0), 0); }
+  // grounded rule-engine roll-ups (deck baseline health + modelled risk)
+  get baselineHealth(): number { return this.agg.avg_scan_score ?? this.avgOverall; }
+  get hasScan(): boolean { return this.agg.avg_scan_score != null; }
+  get totalRisk(): number { return this.agg.total_risk_dollars || 0; }
+  get totalFlaky(): number { return this.agg.total_est_flaky || 0; }
   private localAvg(f: (r: SavedRepo) => number): number {
     const a = this.analyzed; return a.length ? Math.round(a.reduce((s, r) => s + f(r), 0) / a.length) : 0;
   }
