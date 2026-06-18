@@ -39,6 +39,41 @@ export interface QualitySignals {
 
 export interface SavingsEst { items: number; hours: number; usd: number; rate: number; }
 
+// ── deterministic static-scan report (deck epics B–E) ──
+export interface ScanDiscipline { id: string; title: string; adherence: number; findings: number; weight: number; }
+export interface ScanDeviation {
+  rule: string; title: string; discipline: string; severity: string;
+  count: number; weight: number; autofix: boolean; impact: number; bar: number;
+}
+export interface ScanHotspot { path: string; findings: number; errors: number; score: number; }
+export interface ScanRiskDriver { rule: string; count: number; sec_per_run: number; label: string; }
+export interface ScanRisk {
+  label: string;                 // 'modelled'
+  wasted_min_per_run: number;
+  est_flaky_tests: number;
+  maint_hours_per_year: number;
+  dollars_per_year: number;
+  runs_per_year: number;
+  rate_per_hour: number;
+  drivers: ScanRiskDriver[];
+  assumptions: string;
+}
+export interface ScanFinding { rule: string; discipline: string; severity: string; file: string; line: number; snippet: string; }
+export interface ScanReport {
+  stack: string;
+  files_scanned: number;
+  test_cases: number;
+  score: number;                 // baseline health, 0-100 (measured)
+  score_label: string;
+  total_findings: number;
+  disciplines: ScanDiscipline[];
+  deviations: ScanDeviation[];
+  hotspots: ScanHotspot[];
+  risk: ScanRisk;                // modelled
+  findings: ScanFinding[];
+  provenance: string;
+}
+
 export interface QualityCategory {
   id: string;
   title: string;
@@ -63,6 +98,7 @@ export interface QualityAnalysis {
   scores: QualityScores;
   categories: QualityCategory[];
   signals?: QualitySignals;
+  scan?: ScanReport;
   metrics?: Record<string, unknown>;
 }
 

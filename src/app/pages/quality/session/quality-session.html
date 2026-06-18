@@ -61,6 +61,60 @@
         </div>
       </div>
 
+      <!-- ───────── deterministic static scan (rule engine) ───────── -->
+      <ng-container *ngIf="scan as sc">
+        <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+          <div class="kpi"><span class="val" [style.color]="adhColor(sc.score)">{{ sc.score }}</span>
+            <span class="lbl">Baseline health <span class="tag" style="background:#22384a;color:#7dd3fc">measured</span></span></div>
+          <div class="kpi"><span class="val">{{ sc.total_findings }}</span><span class="lbl">Rule deviations</span></div>
+          <div class="kpi"><span class="val warn">{{ sc.risk.est_flaky_tests }}</span>
+            <span class="lbl">Est. flaky <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span></span></div>
+          <div class="kpi"><span class="val bad">\${{ sc.risk.dollars_per_year | number }}</span>
+            <span class="lbl">Maint. risk/yr <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span></span></div>
+        </div>
+
+        <div class="fleet-grid" style="margin-bottom:14px">
+          <div class="panel">
+            <h3>Adherence by discipline <span class="rule-desc" style="text-transform:none;letter-spacing:0">weakest first</span></h3>
+            <div class="disc-row" *ngFor="let d of disciplines">
+              <span class="disc-name">{{ d.title }}</span>
+              <span class="disc-track"><span class="disc-fill" [style.width.%]="d.adherence" [style.background]="adhColor(d.adherence)"></span></span>
+              <span class="disc-val" [style.color]="adhColor(d.adherence)">{{ d.adherence }}</span>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Top deviations <span class="rule-desc" style="text-transform:none;letter-spacing:0">by score impact</span></h3>
+            <div class="hot-row" *ngFor="let v of deviations">
+              <span class="sev" [attr.data-s]="v.severity">{{ v.count }}×</span>
+              <code style="flex:1">{{ v.title }}</code>
+              <span class="tag" *ngIf="v.autofix" style="background:#1e3a2a;color:#7ee0a8">autofix</span>
+              <span class="churn">−{{ v.impact }}pts</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="fleet-grid" style="margin-bottom:18px">
+          <div class="panel">
+            <h3>Hotspot files</h3>
+            <div class="hot-row" *ngFor="let h of hotspots">
+              <code style="flex:1">{{ fileName(h.path) }}</code>
+              <span class="risk-bar"><span class="rf" [style.width.%]="100 - h.score" [style.background]="adhColor(h.score)"></span></span>
+              <span class="churn">{{ h.findings }} ✕<span *ngIf="h.errors"> · {{ h.errors }} err</span></span>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Maintenance risk <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span></h3>
+            <div class="ledger-row" *ngFor="let dr of sc.risk.drivers">
+              <span class="what" style="flex:1">{{ dr.label }} ({{ dr.count }})</span>
+              <span class="when">≈{{ dr.sec_per_run }}s/run</span>
+            </div>
+            <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:10px;line-height:1.5">
+              ≈{{ sc.risk.wasted_min_per_run }} min wasted/run · ≈{{ sc.risk.maint_hours_per_year }} hrs/yr at risk.<br>
+              {{ sc.risk.assumptions }}</p>
+          </div>
+        </div>
+      </ng-container>
+
       <!-- repository signals (deterministic from git history) -->
       <div class="fleet-grid" *ngIf="signals as sig" style="margin-bottom:18px">
         <div class="panel">

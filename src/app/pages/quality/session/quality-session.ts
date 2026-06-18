@@ -10,6 +10,7 @@ import { ScoreRingComponent } from '../../../components/charts/score-ring';
 import {
   Contributor, QualityAnalysis, QualityCategory, QualityItem, QualityService, QualitySession,
   QualitySignals, RecentCommit, RiskFile,
+  ScanReport, ScanDiscipline, ScanDeviation, ScanHotspot,
 } from '../../../services/quality.service';
 import { RepoStore } from '../../../services/repo-store';
 import { SparkComponent } from '../../../components/charts/spark';
@@ -93,6 +94,14 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
   get riskFiles(): RiskFile[] { return this.signals?.risk_files ?? []; }
   get recentCommits(): RecentCommit[] { return this.signals?.recent_commits ?? []; }
   get velocity(): number[] { return this.signals?.velocity ?? []; }
+  // ── deterministic static scan (deck epics B–E: score / disciplines / deviations / risk) ──
+  get scan(): ScanReport | null { return this.analysis?.scan ?? null; }
+  get disciplines(): ScanDiscipline[] { return this.scan?.disciplines ?? []; }
+  get deviations(): ScanDeviation[] { return this.scan?.deviations ?? []; }
+  get hotspots(): ScanHotspot[] { return this.scan?.hotspots ?? []; }
+  adhColor(v: number): string { return v >= 75 ? '#22c55e' : v >= 50 ? '#f59e0b' : '#ef4444'; }
+  fileName(p: string): string { return (p || '').split('/').pop() || p; }
+
   riskColor(v: number): string { return v >= 66 ? '#ef4444' : v >= 33 ? '#f59e0b' : '#22c55e'; }
   avatarColor(name: string): string {
     const palette = ['#38bdf8', '#22c55e', '#f59e0b', '#a78bfa', '#fb7185', '#34d399'];
