@@ -43,8 +43,8 @@ interface Ledger { ts: number; who: string; what: string; repo: string; }
       </div>
       <p class="empty-hint" *ngIf="!disciplines.length" style="margin:4px 0;font-size:13px">Analyze repos to populate disciplines.</p>
       <div *ngIf="trend.length > 1" style="margin-top:18px">
-        <app-trend-line [series]="[{ name: 'Adherence', data: trend }]" [categories]="trendLabels"
-                        [colors]="['#22c55e']" [height]="160" [yMax]="100"></app-trend-line>
+        <app-trend-line [series]="trendSeries" [categories]="trendLabels"
+                        [colors]="trendColors" [height]="160" [yMax]="100"></app-trend-line>
       </div>
     </div>
 
@@ -68,6 +68,8 @@ export class AdherenceComponent implements OnInit {
   ledger: Ledger[] = [];
   trend: number[] = [];
   trendLabels: string[] = [];
+  trendSeries: { name: string; data: number[] }[] = [];
+  readonly trendColors = ['#22c55e'];
   adherence = 0;
   delta = 0;
 
@@ -112,6 +114,7 @@ export class AdherenceComponent implements OnInit {
         const days = Object.keys(byDay).sort();
         this.trendLabels = days;
         this.trend = days.map(d => Math.round(byDay[d].reduce((a, b) => a + b, 0) / byDay[d].length));
+        this.trendSeries = [{ name: 'Adherence', data: this.trend }];
         if (this.trend.length > 1) { this.delta = this.trend[this.trend.length - 1] - this.trend[0]; }
       });
   }

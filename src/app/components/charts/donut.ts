@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import {
   ApexChart, ApexDataLabels, ApexLegend, ApexNonAxisChartSeries, ApexPlotOptions, ApexStroke,
   ApexTooltip, NgApexchartsModule,
@@ -9,17 +9,18 @@ const CUR = '#38bdf8';    // sky — current coverage
 const GAIN = '#22c55e';   // green — projected gain from the current selection
 const TRACK = '#1b232e';  // dark track
 
-/** Coverage donut: current coverage as a solid sky arc, the projected gain as a separate green arc,
- *  remainder as track. Center shows current % and (when a gain exists) the projected %. */
+/** Coverage donut: current coverage as a solid sky arc, projected gain as a separate green arc.
+ *  Chart options are rebuilt in ngOnChanges (not per-cycle getters) so it doesn't re-render every
+ *  change-detection tick. */
 @Component({
   selector: 'app-donut',
   standalone: true,
   imports: [CommonModule, NgApexchartsModule],
   template: `
     <div class="donut-wrap" [style.width.px]="size" [style.height.px]="size">
-      <apx-chart [series]="series" [chart]="{type:'donut', height:size, width:size, sparkline:{enabled:true}, animations:{enabled:true, speed:450}}"
-                 [plotOptions]="plotOptions" [colors]="colors" [stroke]="stroke"
-                 [dataLabels]="noLabels" [legend]="noLegend" [tooltip]="tooltip" [labels]="segLabels"></apx-chart>
+      <apx-chart [series]="series" [chart]="chart" [plotOptions]="plotOptions" [colors]="colors"
+                 [stroke]="stroke" [dataLabels]="noLabels" [legend]="noLegend" [tooltip]="tooltip"
+                 [labels]="segLabels"></apx-chart>
       <div class="center">
         <span class="num" [style.fontSize.px]="size * 0.2">{{ cur }}<small>%</small></span>
         <span class="proj" *ngIf="hasGain">→ {{ proj }}%</span>
@@ -38,26 +39,33 @@ const TRACK = '#1b232e';  // dark track
     .cap { font-size: 12px; color: #aeb9c6; font-weight: 600; text-align: center; }
   `],
 })
-export class DonutComponent {
+export class DonutComponent implements OnChanges {
   @Input() current = 0;
   @Input() projected = 0;
   @Input() label = '';
   @Input() size = 150;
+
+  series: ApexNonAxisChartSeries = [0, 0, 100];
+  chart: ApexChart = { type: 'donut', height: 150, width: 150, sparkline: { enabled: true }, animations: { enabled: false } };
+  readonly colors = [CUR, GAIN, TRACK];
+  readonly segLabels = ['Current', 'Planned gain', 'Remaining'];
+  readonly plotOptions: ApexPlotOptions = { pie: { donut: { size: '64%' }, expandOnClick: false } };
+  readonly stroke: ApexStroke = { width: 0 };
+  readonly noLabels: ApexDataLabels = { enabled: false };
+  readonly noLegend: ApexLegend = { show: false };
+  tooltip: ApexTooltip = { enabled: false, fillSeriesColor: false, y: { formatter: (v: number) => `${v}%` } };
 
   private clamp(v: number) { return Math.max(0, Math.min(100, Math.round(v))); }
   get cur() { return this.clamp(this.current); }
   get proj() { return this.clamp(this.projected); }
   get gain() { return Math.max(0, this.proj - this.cur); }
   get hasGain() { return this.gain > 0; }
-  get series(): ApexNonAxisChartSeries { return [this.cur, this.gain, Math.max(0, 100 - this.cur - this.gain)]; }
-  get segLabels(): string[] { return ['Current', 'Planned gain', 'Remaining']; }
-  get colors(): string[] { return [CUR, GAIN, TRACK]; }
 
-  get plotOptions(): ApexPlotOptions { return { pie: { donut: { size: '64%' }, expandOnClick: false } }; }
-  get stroke(): ApexStroke { return { width: 0 }; }
-  get noLabels(): ApexDataLabels { return { enabled: false }; }
-  get noLegend(): ApexLegend { return { show: false }; }
-  get tooltip(): ApexTooltip {
-    return { enabled: this.hasGain, fillSeriesColor: false, y: { formatter: (v: number) => `${v}%` } };
+  ngOnChanges(): void {
+    const cur = this.cur, gain = this.gain;
+    this.series = [cur, gain, Math.max(0, 100 - cur - gain)];
+    this.chart = { type: 'donut', height: this.size, width: this.size, sparkline: { enabled: true },
+                   animations: { enabled: false } };
+    this.tooltip = { enabled: this.hasGain, fillSeriesColor: false, y: { formatter: (v: number) => `${v}%` } };
   }
 }

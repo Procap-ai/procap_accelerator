@@ -67,7 +67,7 @@
           <div class="rr-metrics">
             <div class="rr-metric" *ngIf="r.tests"><b>{{ r.tests }}</b><span>tests</span></div>
             <div class="rr-spark" title="30-day health-score trend">
-              <app-spark [data]="scoreTrend(r)" [color]="bandColor(r.scores?.overall || 50)"></app-spark>
+              <app-spark [data]="trends[r.repoUrl]" [color]="bandColor(r.scores?.overall || 50)"></app-spark>
               <span class="rr-trendlbl">30d</span>
             </div>
             <div class="rr-metric"><b style="color:var(--accent)">{{ r.coverage ?? '—' }}%</b><span>cov</span></div>

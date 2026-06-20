@@ -48,6 +48,7 @@ export class QualityComponent implements OnInit {
 
   ngOnInit(): void {
     this.repos = this.store.list();
+    this.rebuildTrends();
     this.svc.getFleet().subscribe({
       next: f => {
         this.fleet = f.repos || [];
@@ -72,6 +73,7 @@ export class QualityComponent implements OnInit {
       });
     }
     this.repos = this.store.list();
+    this.rebuildTrends();
   }
 
   private buildLeaderboard(): void {
@@ -116,8 +118,18 @@ export class QualityComponent implements OnInit {
     return palette[h % palette.length];
   }
   initials(name: string): string { return name.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase(); }
+  // Precomputed per-repo trend arrays (stable references → the sparkline doesn't churn /
+  // re-render every change-detection cycle). Keyed by repoUrl, rebuilt only when repos change.
+  trends: Record<string, number[]> = {};
+
+  private rebuildTrends(): void {
+    const next: Record<string, number[]> = {};
+    for (const r of this.repos) { next[r.repoUrl] = this.computeTrend(r); }
+    this.trends = next;
+  }
+
   /** 30-day health trajectory ending at the repo's current score (deterministic, not random). */
-  scoreTrend(r: SavedRepo): number[] {
+  private computeTrend(r: SavedRepo): number[] {
     const end = r.scores?.overall ?? 50;
     const seed = (r.repoUrl || '').length;
     return Array.from({ length: 8 }, (_, i) => {
@@ -158,7 +170,7 @@ export class QualityComponent implements OnInit {
   open(r: SavedRepo): void {
     if (r.sessionId) { void this.router.navigate(['/quality/session', r.sessionId]); }
   }
-  remove(r: SavedRepo, ev: Event): void { ev.stopPropagation(); this.repos = this.store.remove(r.repoUrl); }
+  remove(r: SavedRepo, ev: Event): void { ev.stopPropagation(); this.repos = this.store.remove(r.repoUrl); this.rebuildTrends(); }
   toggleRule(r: { on: boolean }): void { r.on = !r.on; }
 
   shortRepo(url: string): string {

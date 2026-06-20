@@ -60,7 +60,7 @@ const RATE = 65; // blended $/hr — mirrors backend EFFORT_HOURS model
   <div class="fleet-grid">
     <div class="panel">
       <h3>Maintenance cost — projected vs actual <span class="est-tag">est</span></h3>
-      <app-trend-line [series]="series" [categories]="months" [colors]="['#ef4444', '#22c55e']"
+      <app-trend-line [series]="series" [categories]="months" [colors]="trendColors"
                       [height]="240" suffix="h"></app-trend-line>
       <p class="empty-hint" style="font-size:12px;margin:8px 0 0">
         Red = unmanaged upkeep as the suite grows. Green = actual upkeep with Procap. The wedge between is the saving.</p>
@@ -89,6 +89,7 @@ export class SavingsComponent implements OnInit {
   repos: FleetRepo[] = [];
   months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
   series: { name: string; data: number[] }[] = [];
+  readonly trendColors = ['#ef4444', '#22c55e'];
 
   // 6-month forecast scenarios (modelled, anchored on the fleet's annual maintenance risk).
   fcDoNothing = 0;

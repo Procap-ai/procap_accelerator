@@ -59,6 +59,7 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
       next: s => {
         this.session = s;
         this.syncSnapshot(s);
+        this.recomputeBars();
         if (this.launching && s.status !== 'analyzed') { this.launching = false; }
         if (!this.isActive(s.status)) { this.stopPolling(); }
       },
@@ -147,6 +148,7 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
     const ls = this.leaves(node);
     const all = ls.every(l => this.selection.has(l.id));
     for (const l of ls) { all ? this.selection.delete(l.id) : this.selection.add(l.id); }
+    this.recomputeBars();
   }
 
   // ── live estimate ──
@@ -210,10 +212,13 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
   }
 
   /** Per-feature bars for the coverage panel. */
-  coverageBars(): BarRow[] {
+  // Cached so the <app-bar-list> binding is a STABLE reference (recomputed only on session load
+  // or a selection toggle) — a per-cycle method binding made the chart churn/re-render.
+  coverageBarRows: BarRow[] = [];
+
+  private recomputeBars(): void {
     const cat = this.coverageCategory;
-    if (!cat) { return []; }
-    return cat.items.map(i => {
+    this.coverageBarRows = !cat ? [] : cat.items.map(i => {
       const sel = this.leaves(i).some(l => this.selection.has(l.id));
       const cur = i.metric?.current ?? 0;
       const tgt = i.metric?.target ?? 100;
