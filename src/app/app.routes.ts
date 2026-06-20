@@ -15,6 +15,7 @@ import { AdherenceComponent } from './pages/quality/adherence/adherence';
 import { SavingsComponent } from './pages/quality/savings/savings';
 import { GenomeComponent } from './pages/quality/genome/genome';
 import { ConfigurationComponent } from './pages/quality/config/configuration';
+import { AssuranceComponent } from './pages/quality/assurance/assurance';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -33,6 +34,7 @@ export const routes: Routes = [
       { path: 'savings', component: SavingsComponent },
       { path: 'genome/:id', component: GenomeComponent },
       { path: 'config', component: ConfigurationComponent },
+      { path: 'assurance', component: AssuranceComponent },
     ],
   },
   // Sample projects (not linked from the home page)

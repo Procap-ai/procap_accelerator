@@ -155,6 +155,7 @@ export interface FleetRepo {
   scan_findings?: number;
   risk_dollars?: number;        // modelled annual maintenance risk
   est_flaky?: number;
+  tests?: number;               // total tests in repo
 }
 export interface FleetAggregate {
   repo_count: number;
@@ -166,6 +167,7 @@ export interface FleetAggregate {
   avg_scan_score?: number | null;
   total_risk_dollars?: number;
   total_est_flaky?: number;
+  total_tests?: number;
 }
 export interface FleetResponse { repos: FleetRepo[]; aggregate: FleetAggregate; }
 

@@ -1,7 +1,11 @@
 <div class="obs-topbar">
-  <h1>Fleet quality index</h1>
-  <span class="sub">Live aggregate across {{ repoCount }} repositor{{ repoCount === 1 ? 'y' : 'ies' }}</span>
+  <h1>Intelligent Maintenance</h1>
+  <span class="sub">Repo Fleet Summary · {{ repoCount }} repositor{{ repoCount === 1 ? 'y' : 'ies' }}</span>
   <span class="spacer"></span>
+  <select class="repo-select" [(ngModel)]="selectedRepo" (ngModelChange)="onSelectRepo()">
+    <option value="">Select Repository — All (Fleet Summary)</option>
+    <option *ngFor="let r of repos" [value]="r.repoUrl">{{ shortRepo(r.repoUrl) }}</option>
+  </select>
   <button class="secondary" (click)="showAdd = !showAdd">{{ showAdd ? 'Close' : '+ Add repo' }}</button>
 </div>
 
@@ -24,21 +28,24 @@
   <div class="kpi">
     <span class="val" [ngClass]="band(baselineHealth)">{{ baselineHealth }}</span>
     <span class="lbl">Baseline health
-      <span class="tag" *ngIf="hasScan" style="background:#22384a;color:#7dd3fc">measured</span></span>
+      <span class="tag" *ngIf="hasScan" style="background:#22384a;color:#7dd3fc">measured</span>
+      <i class="info">i<span class="tip">Average rule-engine health across the fleet: 100 − Σ(rule weight × occurrences) per repo, clamped.</span></i></span>
   </div>
   <div class="kpi">
     <span class="val sky">{{ avgCoverage }}%</span>
-    <span class="lbl">Avg. test coverage</span>
+    <span class="lbl">Avg. test coverage
+      <i class="info">i<span class="tip">Mean test-coverage % across analysed repos. For E2E suites, coverage = breadth of target-app flows.</span></i></span>
+  </div>
+  <div class="kpi">
+    <span class="val">{{ totalTests | number }}</span>
+    <span class="lbl">Total tests
+      <i class="info">i<span class="tip">Sum of test()/it() blocks across every repo in the fleet.</span></i></span>
   </div>
   <div class="kpi">
     <span class="val" [class.warn]="totalFlaky > 0">{{ totalFlaky }}</span>
     <span class="lbl">Est. flaky tests
-      <span class="tag" *ngIf="hasScan" style="background:#3a2f1a;color:#f5c87a">modelled</span></span>
-  </div>
-  <div class="kpi">
-    <span class="val bad">${{ totalRisk | number }}</span>
-    <span class="lbl">Maintenance risk/yr
-      <span class="tag" *ngIf="hasScan" style="background:#3a2f1a;color:#f5c87a">modelled</span></span>
+      <span class="tag" *ngIf="hasScan" style="background:#3a2f1a;color:#f5c87a">modelled</span>
+      <i class="info">i<span class="tip">Modelled estimate from flaky-prone rule hits across the fleet. Financial ($) impact is shown only on the Exec Savings &amp; Forecast view.</span></i></span>
   </div>
 </div>
 
@@ -58,7 +65,11 @@
             <div class="rr-stack">{{ r.status }}<span *ngIf="r.contributors"> · {{ r.contributors }} contributors</span></div>
           </div>
           <div class="rr-metrics">
-            <app-spark [data]="demoSpark(i + 1)" [color]="bandColor(r.scores?.overall || 50)"></app-spark>
+            <div class="rr-metric" *ngIf="r.tests"><b>{{ r.tests }}</b><span>tests</span></div>
+            <div class="rr-spark" title="30-day health-score trend">
+              <app-spark [data]="scoreTrend(r)" [color]="bandColor(r.scores?.overall || 50)"></app-spark>
+              <span class="rr-trendlbl">30d</span>
+            </div>
             <div class="rr-metric"><b style="color:var(--accent)">{{ r.coverage ?? '—' }}%</b><span>cov</span></div>
             <div class="rr-metric"><b [style.color]="(r.issues || 0) > 0 ? 'var(--warn)' : 'var(--text)'">{{ r.issues ?? '—' }}</b><span>issues</span></div>
             <button class="link-x ghost" (click)="remove(r, $event)" title="Remove" style="padding:2px 6px">✕</button>

@@ -12,6 +12,7 @@ export interface SavedRepo {
   issues?: number;          // headline open-issue count
   contributors?: number;    // distinct recent contributors
   savings?: number;         // cumulative est. savings (USD)
+  tests?: number;           // total tests in repo
   ts: number;               // last updated (ms)
 }
 

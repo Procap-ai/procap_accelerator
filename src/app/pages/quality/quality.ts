@@ -31,7 +31,9 @@ export class QualityComponent implements OnInit {
   repos: SavedRepo[] = [];
   fleet: FleetRepo[] = [];          // server-side snapshots (authoritative)
   agg = { avg_overall: 0, avg_coverage: 0, total_issues: 0, total_savings_est: 0, repo_count: 0,
-          contributors: 0, avg_scan_score: null as number | null, total_risk_dollars: 0, total_est_flaky: 0 };
+          contributors: 0, avg_scan_score: null as number | null, total_risk_dollars: 0, total_est_flaky: 0,
+          total_tests: 0 };
+  selectedRepo = '';   // '' = Repo Fleet Summary (all repos)
   engineers: Engineer[] = [];
   loading = true;
 
@@ -66,6 +68,7 @@ export class QualityComponent implements OnInit {
         repoUrl: url, sessionId: r.session_id, status: 'analyzed',
         scores: { overall: r.overall, coverage: r.coverage, code_quality: 0, ci_tooling: 0 },
         coverage: r.coverage, issues: r.issues, contributors: r.contributors, savings: r.savings_est,
+        tests: r.tests,
       });
     }
     this.repos = this.store.list();
@@ -93,6 +96,14 @@ export class QualityComponent implements OnInit {
   get hasScan(): boolean { return this.agg.avg_scan_score != null; }
   get totalRisk(): number { return this.agg.total_risk_dollars || 0; }
   get totalFlaky(): number { return this.agg.total_est_flaky || 0; }
+  get totalTests(): number { return this.agg.total_tests || this.analyzed.reduce((s, r) => s + (r.tests || 0), 0); }
+
+  /** Select Repository dropdown → '' shows Repo Fleet Summary; a repo navigates to its health view. */
+  onSelectRepo(): void {
+    if (!this.selectedRepo) { return; }
+    const r = this.repos.find(x => x.repoUrl === this.selectedRepo);
+    if (r?.sessionId) { void this.router.navigate(['/quality/session', r.sessionId]); }
+  }
   private localAvg(f: (r: SavedRepo) => number): number {
     const a = this.analyzed; return a.length ? Math.round(a.reduce((s, r) => s + f(r), 0) / a.length) : 0;
   }
@@ -105,8 +116,15 @@ export class QualityComponent implements OnInit {
     return palette[h % palette.length];
   }
   initials(name: string): string { return name.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase(); }
-  demoSpark(seed: number): number[] {
-    return Array.from({ length: 8 }, (_, i) => 40 + ((seed * 7 + i * 11) % 50));
+  /** 30-day health trajectory ending at the repo's current score (deterministic, not random). */
+  scoreTrend(r: SavedRepo): number[] {
+    const end = r.scores?.overall ?? 50;
+    const seed = (r.repoUrl || '').length;
+    return Array.from({ length: 8 }, (_, i) => {
+      const drift = (8 - i) * 2.2;                         // older points sit a bit higher/lower
+      const wobble = ((seed * 7 + i * 13) % 9) - 4;         // small stable wobble
+      return Math.max(0, Math.min(100, Math.round(end + drift * (end < 50 ? 1 : -0.3) + wobble)));
+    });
   }
 
   // ── add repo ──

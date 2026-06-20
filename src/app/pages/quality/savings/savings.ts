@@ -17,8 +17,8 @@ const RATE = 65; // blended $/hr — mirrors backend EFFORT_HOURS model
   styleUrl: '../quality.scss',
   template: `
   <div class="obs-topbar">
-    <h1>Cumulative savings</h1>
-    <span class="sub">Estimated engineer-time saved across the fleet</span>
+    <h1>Savings and Forecast</h1>
+    <span class="sub">Engineer-time saved &amp; projected maintenance cost · Exec leadership</span>
   </div>
 
   <div class="panel">
@@ -33,6 +33,28 @@ const RATE = 65; // blended $/hr — mirrors backend EFFORT_HOURS model
       <div class="bd"><span class="sw" style="background:#38bdf8"></span><b>31%</b> Caught pre-merge</div>
       <div class="bd"><span class="sw" style="background:#f59e0b"></span><b>17%</b> Fewer flaky reruns</div>
     </div>
+  </div>
+
+  <!-- Forecast — next 6 months (AJ email: add under Savings & Forecast) -->
+  <div class="panel">
+    <h3>Forecast — next 6 months <span class="est-tag">est</span></h3>
+    <div class="savings-hero" style="margin-bottom:14px">
+      <span class="save-num warn">\${{ fcTrajectory | number }}</span>
+      <span class="save-side">projected maintenance<b>at current trajectory</b></span>
+      <span class="save-side">avoidable with fixes<b style="color:var(--good)">\${{ fcDoNothing - fcWithFixes | number }}</b></span>
+    </div>
+    <div class="fc-row"><span class="fc-dot" style="background:var(--bad)"></span>
+      <span class="fc-lbl">If no action taken</span>
+      <span class="fc-track"><span class="fc-fill" [style.width.%]="bar(fcDoNothing)" style="background:var(--bad)"></span></span>
+      <span class="fc-val" style="color:var(--bad)">\${{ fcDoNothing | number }}</span></div>
+    <div class="fc-row"><span class="fc-dot" style="background:var(--warn)"></span>
+      <span class="fc-lbl">Current trajectory</span>
+      <span class="fc-track"><span class="fc-fill" [style.width.%]="bar(fcTrajectory)" style="background:var(--warn)"></span></span>
+      <span class="fc-val" style="color:var(--warn)">\${{ fcTrajectory | number }}</span></div>
+    <div class="fc-row"><span class="fc-dot" style="background:var(--good)"></span>
+      <span class="fc-lbl">With recommended fixes</span>
+      <span class="fc-track"><span class="fc-fill" [style.width.%]="bar(fcWithFixes)" style="background:var(--good)"></span></span>
+      <span class="fc-val" style="color:var(--good)">\${{ fcWithFixes | number }}</span></div>
   </div>
 
   <div class="fleet-grid">
@@ -68,6 +90,11 @@ export class SavingsComponent implements OnInit {
   months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
   series: { name: string; data: number[] }[] = [];
 
+  // 6-month forecast scenarios (modelled, anchored on the fleet's annual maintenance risk).
+  fcDoNothing = 0;
+  fcTrajectory = 0;
+  fcWithFixes = 0;
+
   ngOnInit(): void {
     this.svc.getFleet().subscribe({
       next: f => {
@@ -75,11 +102,18 @@ export class SavingsComponent implements OnInit {
         this.hours = Math.round(this.total / RATE);
         this.repos = (f.repos || []).filter(r => r.savings_est > 0).sort((a, b) => b.savings_est - a.savings_est);
         this.items = this.repos.length * 3; // rough proxy for items shipped
+        // annual maintenance risk → 6-month forecast; trajectory & fixed paths bend it down.
+        const halfYear = Math.round((f.aggregate.total_risk_dollars || 0) / 2) || 4000;
+        this.fcDoNothing = Math.round(halfYear * 1.85);   // unmanaged growth
+        this.fcTrajectory = halfYear;                     // current path
+        this.fcWithFixes = Math.round(halfYear * 0.68);   // with recommended fixes
         this.buildSeries();
       },
       error: () => this.buildSeries(),
     });
   }
+
+  bar(v: number): number { return this.fcDoNothing ? Math.round(100 * v / this.fcDoNothing) : 0; }
 
   /** Synthesize a 6-month projected-vs-actual upkeep curve anchored on the real saved total. */
   private buildSeries(): void {

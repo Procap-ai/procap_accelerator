@@ -65,12 +65,17 @@
       <ng-container *ngIf="scan as sc">
         <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
           <div class="kpi"><span class="val" [style.color]="adhColor(sc.score)">{{ sc.score }}</span>
-            <span class="lbl">Baseline health <span class="tag" style="background:#22384a;color:#7dd3fc">measured</span></span></div>
-          <div class="kpi"><span class="val">{{ sc.total_findings }}</span><span class="lbl">Rule deviations</span></div>
+            <span class="lbl">Baseline health <span class="tag" style="background:#22384a;color:#7dd3fc">measured</span>
+              <i class="info">i<span class="tip">Static rule-engine score: 100 − Σ(rule weight × occurrences), clamped 0–100. Deterministic, measured from the code.</span></i></span></div>
+          <div class="kpi"><span class="val sky">{{ sc.test_cases }}</span>
+            <span class="lbl">Total tests
+              <i class="info">i<span class="tip">Count of test()/it() blocks across all spec files in the repository.</span></i></span></div>
+          <div class="kpi"><span class="val">{{ sc.total_findings }}</span>
+            <span class="lbl">Rule deviations
+              <i class="info">i<span class="tip">Total rule violations found across all disciplines (waiting, locators, structure, isolation, auth, assertions).</span></i></span></div>
           <div class="kpi"><span class="val warn">{{ sc.risk.est_flaky_tests }}</span>
-            <span class="lbl">Est. flaky <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span></span></div>
-          <div class="kpi"><span class="val bad">\${{ sc.risk.dollars_per_year | number }}</span>
-            <span class="lbl">Maint. risk/yr <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span></span></div>
+            <span class="lbl">Est. flaky <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span>
+              <i class="info">i<span class="tip">Modelled estimate from flaky-prone rule hits (hard waits, networkidle, brittle locators). Not measured from CI runs.</span></i></span></div>
         </div>
 
         <div class="fleet-grid" style="margin-bottom:14px">
@@ -232,28 +237,49 @@
           </div>
         </div>
 
-        <!-- sticky estimate -->
+        <!-- sticky Projected Impact (redesigned per AJ email, image007) -->
         <aside class="estimate">
-          <div class="estimate-card">
-            <h4>Projected impact</h4>
-            <div class="est-row">
-              <span class="est-label">Overall</span>
-              <span class="est-val">{{ overallNow }} <span class="arrow">→</span> <b [class.up]="overallProjected > overallNow">{{ overallProjected }}</b></span>
+          <div class="estimate-card pi-card">
+            <div class="pi-head"><span class="pi-ico">∿</span> Projected Impact</div>
+            <p class="pi-sub">If you implement the selected fixes — before <span class="arrow">→</span> after</p>
+
+            <!-- overall quality score before → after with gain bar -->
+            <div class="pi-block">
+              <div class="pi-score-row">
+                <span class="pi-lbl">Overall quality score</span>
+                <span class="pi-nums">{{ overallNow }} <span class="arrow">→</span>
+                  <b [class.up]="overallProjected > overallNow">{{ overallProjected }}</b>
+                  <span class="pi-delta" *ngIf="overallProjected !== overallNow">▲ +{{ overallProjected - overallNow }}</span></span>
+              </div>
+              <div class="pi-bar">
+                <span class="pi-fill-now" [style.width.%]="overallNow"></span>
+                <span class="pi-fill-gain" [style.left.%]="overallNow" [style.width.%]="overallProjected - overallNow"></span>
+              </div>
             </div>
-            <div class="est-row" *ngIf="coverageCategory">
-              <span class="est-label">Coverage</span>
-              <span class="est-val">{{ coverageNow }}% <span class="arrow">→</span> <b [class.up]="coverageProjected > coverageNow">{{ coverageProjected }}%</b></span>
+
+            <div class="pi-grid">
+              <div class="pi-cell" *ngIf="coverageCategory">
+                <span class="pi-cell-lbl">Coverage</span>
+                <span class="pi-cell-val">{{ coverageNow }}% <span class="arrow">→</span>
+                  <b [class.up]="coverageProjected > coverageNow">{{ coverageProjected }}%</b></span>
+              </div>
+              <div class="pi-cell" *ngIf="countCategories.length">
+                <span class="pi-cell-lbl">Open issues</span>
+                <span class="pi-cell-val">{{ totalIssuesNow }} <span class="arrow">→</span>
+                  <b [class.down]="totalIssuesProjected < totalIssuesNow">{{ totalIssuesProjected }}</b>
+                  <span class="pi-noop" *ngIf="totalIssuesProjected === totalIssuesNow">no new issues</span></span>
+              </div>
+              <div class="pi-cell">
+                <span class="pi-cell-lbl">Effort</span>
+                <span class="pi-effort">
+                  <span class="pi-eb" [class.on]="selectedCount > 0"></span>
+                  <span class="pi-eb" [class.on]="selectedCount > 2"></span>
+                  <span class="pi-eb" [class.on]="selectedCount > 4"></span>
+                  <b>{{ effortLabel }}</b></span>
+              </div>
             </div>
-            <div class="est-row" *ngIf="countCategories.length">
-              <span class="est-label">Open issues</span>
-              <span class="est-val">{{ totalIssuesNow }} <span class="arrow">→</span> <b [class.down]="totalIssuesProjected < totalIssuesNow">{{ totalIssuesProjected }}</b></span>
-            </div>
-            <div class="est-row">
-              <span class="est-label">Effort</span>
-              <span class="est-val">{{ effortLabel }}</span>
-            </div>
-            <hr />
-            <div class="est-count">{{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected</div>
+
+            <div class="est-count">✓ {{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected</div>
             <button class="primary block" [disabled]="!selectedCount || launching" (click)="implement()">
               {{ launching ? 'Starting…' : 'Implement selected →' }}
             </button>
