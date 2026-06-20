@@ -101,6 +101,10 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
   get hotspots(): ScanHotspot[] { return this.scan?.hotspots ?? []; }
   adhColor(v: number): string { return v >= 75 ? '#22c55e' : v >= 50 ? '#f59e0b' : '#ef4444'; }
   fileName(p: string): string { return (p || '').split('/').pop() || p; }
+  // Tech-debt $ is exec-only per AJ's email — gate it behind a view toggle (default hidden on
+  // the Architect/Lead repo view). usd_model carries visibility:"exec".
+  get usd(): ScanReport['usd_model'] | null { return this.scan?.usd_model ?? null; }
+  showExecDollars = false;
 
   riskColor(v: number): string { return v >= 66 ? '#ef4444' : v >= 33 ? '#f59e0b' : '#22c55e'; }
   avatarColor(name: string): string {

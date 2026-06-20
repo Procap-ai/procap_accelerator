@@ -33,6 +33,12 @@ import { RouterModule } from '@angular/router';
       </nav>
 
       <nav class="nav-group">
+        <div class="persona-label">Governance</div>
+        <a class="nav-link" routerLink="/quality/config" routerLinkActive="active">
+          <span class="ico">⚙</span> Configuration</a>
+      </nav>
+
+      <nav class="nav-group">
         <div class="persona-label">Procap</div>
         <a class="nav-link" routerLink="/"><span class="ico">←</span> Back to home</a>
       </nav>

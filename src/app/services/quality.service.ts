@@ -59,6 +59,18 @@ export interface ScanRisk {
   assumptions: string;
 }
 export interface ScanFinding { rule: string; discipline: string; severity: string; file: string; line: number; snippet: string; }
+export interface ScanUsdBreakdown { rule: string; label: string; count: number; weight: number; points: number; usd: number; }
+export interface ScanUsdModel {
+  label: string;                 // 'modelled'
+  visibility: string;            // 'exec' — hide from Architect/Lead dashboard
+  dollars: number;
+  points: number;
+  usd_per_point: number;
+  tech_debt_multiplier: number;
+  formula: string;
+  breakdown: ScanUsdBreakdown[];
+}
+export interface ScanRulesetMeta { overridden: string[]; disabled: string[]; added: string[]; bad_regex: string[]; active_count: number; }
 export interface ScanReport {
   stack: string;
   files_scanned: number;
@@ -70,9 +82,35 @@ export interface ScanReport {
   deviations: ScanDeviation[];
   hotspots: ScanHotspot[];
   risk: ScanRisk;                // modelled
+  usd_model: ScanUsdModel;       // tech-debt $ (modelled, exec-only)
+  settings?: Record<string, number>;
+  ruleset_meta?: ScanRulesetMeta;
   findings: ScanFinding[];
   provenance: string;
 }
+
+// ── grounding ruleset (Configuration → Rule Management) ──
+export interface RulesetSettings {
+  tech_debt_multiplier?: number;
+  usd_per_point?: number;
+  runs_per_year?: number;
+  rate_per_hour?: number;
+}
+export interface RulesetRule {
+  id: string;
+  disabled?: boolean;
+  pattern?: string;
+  discipline?: string;
+  severity?: string;
+  weight?: number;
+  why?: string;
+  fix?: string;
+  autofix?: boolean;
+  flaky?: boolean;
+  cost_sec?: number;
+}
+export interface RulesetConfig { settings: RulesetSettings; rules: RulesetRule[]; }
+export interface RulesetSaveResponse { saved: boolean; config: RulesetConfig; warnings: string[]; rule_count: number; }
 
 export interface QualityCategory {
   id: string;
@@ -214,6 +252,16 @@ export class QualityService {
   /** Time-series of scorecard snapshots for one repo (owner/repo). */
   getSnapshots(repo: string): Observable<SnapshotsResponse> {
     return this.http.get<SnapshotsResponse>(`${this.apiBase}/quality/snapshots/${repo}`);
+  }
+
+  /** Global active grounding-ruleset (settings + custom rule overlay). */
+  getRuleset(): Observable<{ config: RulesetConfig }> {
+    return this.http.get<{ config: RulesetConfig }>(`${this.apiBase}/quality/ruleset`);
+  }
+
+  /** Save the active grounding-ruleset (validated server-side). */
+  putRuleset(config: RulesetConfig): Observable<RulesetSaveResponse> {
+    return this.http.put<RulesetSaveResponse>(`${this.apiBase}/quality/ruleset`, config);
   }
 
   /** Implement a batch of selected leaf items as a single branch/PR. */
