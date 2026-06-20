@@ -86,7 +86,11 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
   isActive(status?: string): boolean { return !!status && ACTIVE_STATUSES.includes(status); }
   get analysis(): QualityAnalysis | null { return this.session?.analysis ?? null; }
   get categories(): QualityCategory[] { return this.analysis?.categories ?? []; }
-  get isAnalyzed(): boolean { return this.session?.status === 'analyzed'; }
+  // Keep the analysis report visible once it exists — not only while status==='analyzed'.
+  // Otherwise it vanishes after run_task / open_pr (status task_done | pr_open | failed).
+  get isAnalyzed(): boolean {
+    return !!this.analysis?.categories?.length && !this.isActive(this.session?.status);
+  }
 
   // ── git/repo signals (Repository Health enrichment) ──
   get signals(): QualitySignals | null { return this.analysis?.signals ?? null; }
