@@ -302,11 +302,11 @@
         <button class="primary" (click)="toggleTokenInput()" *ngIf="!showTokenInput">Open Pull Request</button>
         <div class="token-row" *ngIf="showTokenInput">
           <input type="password" [(ngModel)]="githubToken"
-                 placeholder="GitHub PAT (public_repo scope)" autocomplete="off" />
+                 placeholder="GitHub PAT (repo + workflow scope)" autocomplete="off" />
           <button class="primary" (click)="submitPr()">Create PR</button>
           <button class="ghost" (click)="toggleTokenInput()">Cancel</button>
         </div>
-        <p class="hint">Token is sent once to open the PR and is never stored on our servers.</p>
+        <p class="hint">Use a token with <code>repo</code> + <code>workflow</code> scopes (the latter is needed for CI-pipeline fixes that touch <code>.github/workflows/</code>). Sent once to open the PR and never stored on our servers.</p>
         <p class="validation bad" *ngIf="prError">{{ prError }}</p>
       </div>
     </div>
