@@ -290,7 +290,15 @@ export class QualityService {
   githubPr(owner: string, repo: string, num: number): Observable<GithubPr> {
     return this.http.get<GithubPr>(`https://api.github.com/repos/${owner}/${repo}/pulls/${num}`);
   }
+
+  /** Recursive file tree at a commit/tree sha — used to match journeys against real test files. */
+  githubTree(owner: string, repo: string, sha: string): Observable<GithubTree> {
+    return this.http.get<GithubTree>(
+      `https://api.github.com/repos/${owner}/${repo}/git/trees/${sha}?recursive=1`);
+  }
 }
+
+export interface GithubTree { sha: string; truncated: boolean; tree: { path: string; type: string }[]; }
 
 export interface GithubCommit {
   sha: string;

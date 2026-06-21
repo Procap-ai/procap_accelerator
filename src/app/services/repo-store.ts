@@ -20,13 +20,18 @@ export interface SavedRepo {
 }
 
 const KEY = 'procap_quality_repos';
+const HIDDEN_KEY = 'meridian_hidden_repos';
 
 @Injectable({ providedIn: 'root' })
 export class RepoStore {
+  /** Visible repos = stored list minus any the user has explicitly removed. The hidden set is what
+   *  keeps a removed repo gone after refresh, even though the /quality/fleet response re-supplies it. */
   list(): SavedRepo[] {
+    const hidden = this.hidden();
     try {
       const v = JSON.parse(localStorage.getItem(KEY) || '[]');
-      return Array.isArray(v) ? (v as SavedRepo[]).sort((a, b) => b.ts - a.ts) : [];
+      if (!Array.isArray(v)) { return []; }
+      return (v as SavedRepo[]).filter(r => !hidden.has(norm(r.repoUrl))).sort((a, b) => b.ts - a.ts);
     } catch {
       return [];
     }
@@ -37,29 +42,51 @@ export class RepoStore {
     return this.list().find(r => norm(r.repoUrl) === k);
   }
 
-  /** Insert or merge a repo entry, keyed by normalised repo URL. */
+  /** Insert or merge a repo entry, keyed by normalised repo URL. A hidden repo stays hidden unless
+   *  it is explicitly re-added (call unhide() first, as the add-repo flow does). */
   upsert(patch: Partial<SavedRepo> & { repoUrl: string }): SavedRepo[] {
     const k = norm(patch.repoUrl);
-    const list = this.list().filter(r => norm(r.repoUrl) !== k);
-    const existing = this.list().find(r => norm(r.repoUrl) === k);
+    const raw = this.raw();
+    const existing = raw.find(r => norm(r.repoUrl) === k);
+    const rest = raw.filter(r => norm(r.repoUrl) !== k);
     const merged: SavedRepo = {
       sessionId: '', status: 'created',
       ...existing, ...patch, ts: Date.now(),
     } as SavedRepo;
-    list.unshift(merged);
-    this.save(list.slice(0, 40));
+    rest.unshift(merged);
+    this.save(rest.slice(0, 40));
     return this.list();
   }
 
   remove(repoUrl: string): SavedRepo[] {
     const k = norm(repoUrl);
-    this.save(this.list().filter(r => norm(r.repoUrl) !== k));
+    const h = this.hidden();
+    h.add(k);
+    this.saveHidden(h);
+    this.save(this.raw().filter(r => norm(r.repoUrl) !== k));
     return this.list();
   }
 
-  private save(list: SavedRepo[]): void {
-    localStorage.setItem(KEY, JSON.stringify(list));
+  /** Un-hide a repo so an explicit re-add brings it back. */
+  unhide(repoUrl: string): void {
+    const h = this.hidden();
+    if (h.delete(norm(repoUrl))) { this.saveHidden(h); }
   }
+
+  private raw(): SavedRepo[] {
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY) || '[]');
+      return Array.isArray(v) ? (v as SavedRepo[]) : [];
+    } catch { return []; }
+  }
+  private hidden(): Set<string> {
+    try {
+      const v = JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]');
+      return new Set(Array.isArray(v) ? (v as string[]) : []);
+    } catch { return new Set(); }
+  }
+  private saveHidden(h: Set<string>): void { localStorage.setItem(HIDDEN_KEY, JSON.stringify([...h])); }
+  private save(list: SavedRepo[]): void { localStorage.setItem(KEY, JSON.stringify(list)); }
 }
 
 function norm(url: string): string {

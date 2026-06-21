@@ -37,11 +37,12 @@ export class OptimizeComponent implements OnInit, OnDestroy {
   prError = '';
 
   fixType = 'all';
+  // Coverage is intentionally excluded here — per AJ's email it belongs to the System & Business
+  // Assurance group, not Automation Quality Governance. This page manages script-level quality only.
   readonly fixTypes: FixType[] = [
     { id: 'all', label: 'All fix types', kinds: [] },
     { id: 'antipattern', label: 'Anti-patterns', kinds: ['lint', 'refactor'] },
     { id: 'hygiene', label: 'Repo hygiene', kinds: ['config'] },
-    { id: 'coverage', label: 'Coverage', kinds: ['coverage'] },
     { id: 'ci', label: 'CI & tooling', kinds: ['ci'] },
   ];
 
@@ -68,7 +69,10 @@ export class OptimizeComponent implements OnInit, OnDestroy {
 
   isActive(status?: string): boolean { return !!status && ACTIVE_STATUSES.includes(status); }
   get analysis(): QualityAnalysis | null { return this.session?.analysis ?? null; }
-  get categories(): QualityCategory[] { return this.analysis?.categories ?? []; }
+  /** Governance fix planner excludes coverage categories (those live under Business Assurance). */
+  get categories(): QualityCategory[] {
+    return (this.analysis?.categories ?? []).filter(c => c.kind !== 'coverage' && c.id !== 'coverage');
+  }
   get isAnalyzed(): boolean { return !!this.analysis?.categories?.length; }
 
   /** Categories visible for the chosen Fix-type. */

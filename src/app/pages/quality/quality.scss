@@ -549,10 +549,13 @@ button {
 .assur-formula { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);
   background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
   line-height: 1.7; b { color: var(--text); } }
-.jrow { display: grid; grid-template-columns: 2.2fr 1fr 1fr .8fr auto; gap: 10px; align-items: center;
-  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+// Fixed trailing columns (not fr) so every independent .jrow grid computes identical track widths
+// → header and all body rows line up regardless of whether a row renders its action cell.
+.jrow { display: grid; grid-template-columns: minmax(0,1fr) 120px 140px 96px 96px; gap: 10px;
+  align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
   &.jhead { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .jname b { color: var(--text); } .jsrc { color: var(--muted); font-size: 11px; } }
+  .jname { min-width: 0; b { color: var(--text); } }
+  .jsrc { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
 .align-pill { font-size: 11px; padding: 2px 9px; border-radius: 20px; text-transform: capitalize; font-weight: 600;
   &.aligned { background: #1e3a2a; color: #7ee0a8; }
   &.partial { background: #3a2f1a; color: #f5c87a; }

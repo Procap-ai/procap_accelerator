@@ -3,8 +3,11 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
 import { SparkComponent } from '../../components/charts/spark';
-import { FleetRepo, QualityService } from '../../services/quality.service';
+import { FleetRepo, QualityService, QualitySession } from '../../services/quality.service';
 import { RepoStore, SavedRepo } from '../../services/repo-store';
 
 interface Engineer { name: string; commits: number; }
@@ -76,14 +79,24 @@ export class QualityComponent implements OnInit {
     this.rebuildTrends();
   }
 
+  /** Real leaderboard: aggregate the actual git contributors (name + commits) across every tracked
+   *  repo's analysis signals. No synthetic names — empty until at least one repo is analysed. */
   private buildLeaderboard(): void {
-    // POC: distribute fleet contributor counts into a demo leaderboard (real names need a richer
-    // endpoint; the per-repo Health view shows the actual git contributors).
-    const total = this.agg.contributors || this.repos.reduce((s, r) => s + (r.contributors || 0), 0);
-    const names = ['Priya N.', 'Marco T.', 'Sora L.', 'Dana R.', 'Ken B.', 'Ava P.'];
-    const n = Math.max(1, Math.min(names.length, total || 4));
-    this.engineers = names.slice(0, n).map((name, i) => ({ name, commits: Math.max(1, Math.round((total || 12) / (i + 1.5))) }))
-      .sort((a, b) => b.commits - a.commits);
+    const repos = this.repos.filter(r => r.sessionId);
+    if (!repos.length) { this.engineers = []; return; }
+    forkJoin(repos.map(r => this.svc.getSession(r.sessionId).pipe(catchError(() => of(null)))))
+      .subscribe(sessions => {
+        const totals: Record<string, number> = {};
+        for (const s of sessions) {
+          for (const c of (s as QualitySession | null)?.analysis?.signals?.contributors || []) {
+            totals[c.name] = (totals[c.name] || 0) + (c.commits || 0);
+          }
+        }
+        this.engineers = Object.entries(totals)
+          .map(([name, commits]) => ({ name, commits }))
+          .sort((a, b) => b.commits - a.commits)
+          .slice(0, 6);
+      });
   }
 
   // ── aggregates (fall back to local snapshots when the fleet endpoint is empty) ──
@@ -154,6 +167,7 @@ export class QualityComponent implements OnInit {
     const url = this.repoUrl.trim();
     if (!url) { return; }
     this.starting = true;
+    this.store.unhide(url);   // explicit (re-)add brings a previously removed repo back
     this.svc.createSession(url).subscribe({
       next: ({ session_id }) => {
         this.store.upsert({ repoUrl: url, sessionId: session_id, status: 'analyzing' });

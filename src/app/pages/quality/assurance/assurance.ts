@@ -24,11 +24,14 @@ type Tab = 'coverage' | 'ac';
     <h1>System &amp; Business Assurance</h1>
     <span class="sub">Coverage, gaps &amp; requirement alignment</span>
     <span class="spacer"></span>
-    <select class="repo-select" [(ngModel)]="selectedRepo">
-      <option value="">All repositories</option>
+    <select class="repo-select" [(ngModel)]="selectedRepo" (ngModelChange)="onRepoChange()">
+      <option value="">All repositories (authored journeys)</option>
       <option *ngFor="let r of repos" [value]="r.repoUrl">{{ shortRepo(r.repoUrl) }}</option>
     </select>
   </div>
+
+  <p class="rule-desc" *ngIf="matchNote" style="text-transform:none;letter-spacing:0;margin:-4px 0 12px">
+    {{ matchNote }}</p>
 
   <div class="cfg-tabs">
     <button class="cfg-tab" [class.active]="tab === 'coverage'" (click)="tab = 'coverage'">Coverage snapshot &amp; gaps</button>
@@ -62,7 +65,7 @@ type Tab = 'coverage' | 'ac';
           <span>{{ j.criticality }}</span>
           <span><span class="align-pill" [ngClass]="j.alignment">{{ j.alignment }}</span></span>
           <span [style.color]="isGap(j) ? 'var(--bad)' : 'var(--good)'">\${{ j.weightUsd | number }}</span>
-          <button class="ghost" style="font-size:11px;padding:3px 9px" *ngIf="isGap(j)" (click)="scaffold(j)">Scaffold</button>
+          <span><button class="ghost" style="font-size:11px;padding:3px 9px" *ngIf="isGap(j)" (click)="scaffold(j)">Scaffold</button></span>
         </div>
         <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:12px">
           Risk exposure from gaps: <b style="color:var(--bad)">\${{ riskExposure | number }}</b>.
@@ -155,6 +158,7 @@ export class AssuranceComponent implements OnInit {
   drill = '';
   scaffolded: Journey | null = null;
   scaffoldText = '';
+  matchNote = '';
 
   ngOnInit(): void {
     this.repos = this.store.list();
@@ -173,6 +177,50 @@ export class AssuranceComponent implements OnInit {
       error: () => { /* keep local */ },
     });
     if (this.route.snapshot.queryParamMap.get('tab') === 'ac') { this.tab = 'ac'; }
+  }
+
+  // ── repo selector: re-evaluate journeys against the selected repo's REAL test files ──
+  private parseRepo(url?: string): { owner: string; repo: string } | null {
+    const m = (url || '').match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+    return m ? { owner: m[1], repo: m[2] } : null;
+  }
+  private isTestFile(p: string): boolean {
+    return /\.(spec|test|cy)\.[jt]sx?$/i.test(p) || /\.feature$/i.test(p)
+      || /(^|\/)(test_[^/]+|[^/]+_test)\.py$/i.test(p);
+  }
+  private tokens(name: string): string[] {
+    const stop = new Set(['with', 'flow', 'code', 'edit', 'saved', 'page', 'user', 'apply', 'applied']);
+    return name.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length >= 4 && !stop.has(w));
+  }
+
+  onRepoChange(): void {
+    if (!this.selectedRepo) { this.journeys = this.journeyStore.list(); this.matchNote = ''; return; }
+    const pr = this.parseRepo(this.selectedRepo);
+    if (!pr) { return; }
+    this.matchNote = 'Matching journeys against the repository’s test files…';
+    this.svc.githubHead(pr.owner, pr.repo).subscribe({
+      next: head => this.svc.githubTree(pr.owner, pr.repo, head.sha).subscribe({
+        next: tree => this.applyMatches(tree.tree.filter(t => t.type === 'blob' && this.isTestFile(t.path)).map(t => t.path)),
+        error: () => { this.matchNote = 'Could not read the repo file tree (private repo or GitHub rate-limit) — showing authored journeys.'; this.journeys = this.journeyStore.list(); },
+      }),
+      error: () => { this.matchNote = 'Could not reach GitHub — showing authored journeys.'; this.journeys = this.journeyStore.list(); },
+    });
+  }
+
+  /** Directional auto-comparison: a journey whose keywords appear in a real test path is treated as
+   *  having a candidate test (existence only — fidelity is NOT verified, so it caps at "partial"). */
+  private applyMatches(testPaths: string[]): void {
+    const lowers = testPaths.map(p => p.toLowerCase());
+    this.journeys = this.journeyStore.list().map(j => {
+      const toks = this.tokens(j.name);
+      const hitIdx = lowers.findIndex(p => toks.some(t => p.includes(t)));
+      if (hitIdx >= 0) {
+        return { ...j, alignment: 'partial', confidence: 55, test: testPaths[hitIdx].split('/').pop() || testPaths[hitIdx] } as Journey;
+      }
+      return { ...j, alignment: 'no-test', confidence: 0, test: undefined } as Journey;
+    });
+    this.matchNote = `Matched against ${testPaths.length} test file${testPaths.length === 1 ? '' : 's'} in `
+      + `${this.shortRepo(this.selectedRepo)} — existence only; fidelity not verified (capped at “partial”).`;
   }
 
   // ── the four numbers ──
