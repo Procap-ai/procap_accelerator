@@ -13,6 +13,9 @@ export interface SavedRepo {
   contributors?: number;    // distinct recent contributors
   savings?: number;         // cumulative est. savings (USD)
   tests?: number;           // total tests in repo
+  prUrl?: string;           // last raised PR url (for the Approval queue tracker)
+  scannedSha?: string;      // repo HEAD sha captured when this analysis was recorded
+  scannedAt?: number;       // when the scan was recorded (ms) — for "new commits since" banner
   ts: number;               // last updated (ms)
 }
 

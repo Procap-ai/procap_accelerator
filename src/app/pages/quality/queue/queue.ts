@@ -1,19 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
-import { QualityItem, QualityService, QualitySession } from '../../../services/quality.service';
+import { QualityService } from '../../../services/quality.service';
 import { RepoStore } from '../../../services/repo-store';
 
-interface QueueItem {
-  sessionId: string; repo: string; id: string; title: string; description?: string;
-  impact: number; confidence: number; effort: string; tags: string[];
+type PrState = 'open' | 'merged' | 'closed' | 'draft' | 'unknown';
+
+interface PrRow {
+  repo: string; sessionId: string; number: number; title: string; url: string;
+  state: PrState; author: string; updatedAt: number; loading: boolean;
 }
 
-/** Approval Index & My Queue — high-impact, model-generated fix items across the fleet, ranked
- *  for review. "Approve & push" launches the implement→PR flow on the session. */
+/** Approval queue → PR tracker. Lists the pull requests Meridian has raised across tracked repos
+ *  and their live status (open / merged / closed), fetched from the GitHub API on load. The fix
+ *  approval/implement actions now live on each repo's "Take action & Optimize" page. */
 @Component({
   selector: 'app-queue',
   standalone: true,
@@ -22,31 +25,35 @@ interface QueueItem {
   template: `
   <div class="obs-topbar">
     <h1>Approval queue</h1>
-    <span class="sub">{{ items.length }} item{{ items.length === 1 ? '' : 's' }} across {{ repoCount }} repos</span>
+    <span class="sub">Pull requests raised by Meridian · live status</span>
     <span class="spacer"></span>
-    <div class="kpi" style="padding:8px 14px"><span class="val sky" style="font-size:22px">{{ avgConfidence }}%</span>
-      <span class="lbl">avg confidence</span></div>
+    <div class="kpi" style="padding:8px 14px"><span class="val good" style="font-size:22px">{{ openCount }}</span>
+      <span class="lbl">open</span></div>
+    <div class="kpi" style="padding:8px 14px"><span class="val sky" style="font-size:22px">{{ mergedCount }}</span>
+      <span class="lbl">merged</span></div>
   </div>
 
   <div class="panel">
-    <p class="empty-hint" *ngIf="loading" style="margin:4px 0">Gathering candidates…</p>
-    <p class="empty-hint" *ngIf="!loading && !items.length" style="margin:4px 0">
-      No pending items. Analyze a repo to populate the queue.</p>
-    <div class="queue-row" *ngFor="let it of items">
+    <p class="empty-hint" *ngIf="loading" style="margin:4px 0">Gathering pull requests…</p>
+    <p class="empty-hint" *ngIf="!loading && !rows.length" style="margin:4px 0">
+      No pull requests yet. Open one from a repo's <b>Take action &amp; Optimize</b> page.</p>
+
+    <div class="queue-row" *ngFor="let r of rows">
       <div>
         <div class="q-head">
-          <span class="sev" [ngClass]="sev(it)">{{ sev(it) }}</span>
-          <span class="q-title">{{ it.title }}</span>
-          <span class="tag" *ngFor="let t of it.tags.slice(0, 2)">{{ t }}</span>
-          <span class="impact">+{{ it.impact }}</span>
+          <span class="sev" [ngClass]="badgeClass(r.state)">{{ r.state }}</span>
+          <span class="q-title">{{ r.title }}</span>
+          <span class="tag">#{{ r.number }}</span>
         </div>
-        <div class="q-repo">{{ it.repo }} · confidence <b class="conf">{{ it.confidence }}%</b> · {{ it.effort }} effort</div>
-        <div class="q-desc" *ngIf="it.description">{{ it.description }}</div>
+        <div class="q-repo">{{ r.repo }}
+          <span *ngIf="r.author"> · by {{ r.author }}</span>
+          <span *ngIf="r.updatedAt"> · updated {{ ago(r.updatedAt) }}</span>
+          <span *ngIf="r.loading" style="color:var(--muted)"> · checking status…</span></div>
       </div>
       <div class="q-actions">
-        <button class="ghost" (click)="review(it)">Review</button>
-        <button class="primary" (click)="approve(it)" [disabled]="busy === it.id">
-          {{ busy === it.id ? 'Pushing…' : 'Approve & push' }}</button>
+        <a class="ghost" [routerLink]="['/quality/session', r.sessionId]">Repo overview</a>
+        <a class="primary" [href]="r.url" target="_blank" rel="noopener"
+           style="padding:7px 14px;border-radius:8px;text-decoration:none">View PR ↗</a>
       </div>
     </div>
   </div>
@@ -55,58 +62,64 @@ interface QueueItem {
 export class QueueComponent implements OnInit {
   private readonly svc = inject(QualityService);
   private readonly store = inject(RepoStore);
-  private readonly router = inject(Router);
 
-  items: QueueItem[] = [];
+  rows: PrRow[] = [];
   loading = true;
-  busy = '';
-  repoCount = 0;
 
   ngOnInit(): void {
     const repos = this.store.list().filter(r => r.sessionId);
-    this.repoCount = repos.length;
     if (!repos.length) { this.loading = false; return; }
     forkJoin(repos.map(r => this.svc.getSession(r.sessionId).pipe(
       catchError(() => of(null)),
       map(s => ({ s, repo: r.repoUrl })),
     ))).subscribe(results => {
-      const out: QueueItem[] = [];
+      const out: PrRow[] = [];
       for (const { s, repo } of results) {
-        if (!s?.analysis) { continue; }
+        if (!s?.pr_url) { continue; }
         const name = repo.replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '');
-        for (const cat of s.analysis.categories) {
-          for (const item of cat.items) {
-            for (const leaf of this.leaves(item)) {
-              out.push({
-                sessionId: s.session_id, repo: name, id: leaf.id, title: leaf.title,
-                description: leaf.description, impact: leaf.impact || 0,
-                confidence: leaf.confidence ?? 70, effort: leaf.est_effort, tags: leaf.tags || [],
-              });
-            }
-          }
-        }
+        const parsed = this.parsePr(s.pr_url);
+        out.push({
+          repo: name, sessionId: s.session_id,
+          number: parsed?.number ?? 0,
+          title: s.task_result?.suggested_pr_title || 'Meridian fixes',
+          url: s.pr_url, state: 'unknown', author: '', updatedAt: 0, loading: !!parsed,
+        });
       }
-      this.items = out.sort((a, b) => (b.confidence + b.impact) - (a.confidence + a.impact)).slice(0, 40);
+      this.rows = out;
       this.loading = false;
+      // hydrate live status from GitHub (best-effort; public repos, rate-limited)
+      for (const row of this.rows) {
+        const p = this.parsePr(row.url);
+        if (!p) { row.loading = false; continue; }
+        this.svc.githubPr(p.owner, p.repo, p.number).subscribe({
+          next: pr => {
+            row.state = pr.merged ? 'merged' : pr.state === 'closed' ? 'closed' : 'open';
+            row.title = pr.title || row.title;
+            row.author = pr.user?.login || '';
+            row.updatedAt = new Date(pr.updated_at).getTime();
+            row.loading = false;
+          },
+          error: () => { row.loading = false; },
+        });
+      }
     });
   }
 
-  private leaves(n: QualityItem): QualityItem[] {
-    return n.children?.length ? n.children.flatMap(c => this.leaves(c)) : [n];
+  private parsePr(url: string): { owner: string; repo: string; number: number } | null {
+    const m = (url || '').match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+    return m ? { owner: m[1], repo: m[2], number: Number(m[3]) } : null;
   }
 
-  get avgConfidence(): number {
-    return this.items.length ? Math.round(this.items.reduce((s, i) => s + i.confidence, 0) / this.items.length) : 0;
+  get openCount(): number { return this.rows.filter(r => r.state === 'open' || r.state === 'draft').length; }
+  get mergedCount(): number { return this.rows.filter(r => r.state === 'merged').length; }
+
+  badgeClass(state: PrState): string {
+    return state === 'merged' ? 'high' : state === 'open' ? 'critical' : state === 'closed' ? 'medium' : 'medium';
   }
-  sev(it: QueueItem): string { return it.confidence >= 90 ? 'critical' : it.confidence >= 75 ? 'high' : 'medium'; }
-
-  review(it: QueueItem): void { void this.router.navigate(['/quality/session', it.sessionId]); }
-
-  approve(it: QueueItem): void {
-    this.busy = it.id;
-    this.svc.runSelections(it.sessionId, [it.id]).subscribe({
-      next: () => { void this.router.navigate(['/quality/session', it.sessionId]); },
-      error: () => { this.busy = ''; },
-    });
+  ago(ms: number): string {
+    const d = Math.max(0, (Date.now() - ms) / 1000);
+    if (d < 3600) { return `${Math.round(d / 60)}m ago`; }
+    if (d < 86400) { return `${Math.round(d / 3600)}h ago`; }
+    return `${Math.round(d / 86400)}d ago`;
   }
 }

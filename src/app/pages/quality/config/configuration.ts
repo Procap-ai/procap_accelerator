@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { QualityService, RulesetConfig } from '../../../services/quality.service';
+import { Journey, JourneyStore } from '../../../services/journey-store';
 
-type Tab = 'rules' | 'users' | 'repos';
+type Tab = 'rules' | 'journeys' | 'users' | 'repos';
 
 /** Built-in catalog reference (mirrors worker/quality_scanner.py RULES) — shown read-only so the
  *  user knows which generic rules an overlay can override or disable. */
@@ -36,6 +37,7 @@ const BUILTIN = [
 
   <div class="cfg-tabs">
     <button class="cfg-tab" [class.active]="tab === 'rules'" (click)="tab = 'rules'">Rule Management</button>
+    <button class="cfg-tab" [class.active]="tab === 'journeys'" (click)="tab = 'journeys'">Journeys &amp; Risk</button>
     <button class="cfg-tab" [class.active]="tab === 'users'" (click)="tab = 'users'">User &amp; Role Mgmt
       <span class="tag" style="background:#2a2f3a;color:var(--muted)">static</span></button>
     <button class="cfg-tab" [class.active]="tab === 'repos'" (click)="tab = 'repos'">Repo Management
@@ -92,6 +94,37 @@ const BUILTIN = [
     </div>
   </ng-container>
 
+  <!-- ───────── Journeys & Risk (functional, local) ───────── -->
+  <div class="panel" *ngIf="tab === 'journeys'">
+    <h3>Candidate user journeys <span class="rule-desc" style="text-transform:none;letter-spacing:0">risk-weighted; feeds AC alignment &amp; coverage gaps</span></h3>
+    <p class="rule-desc" style="text-transform:none;letter-spacing:0;line-height:1.6;margin:0 0 14px">
+      Define the business-critical journeys to assure (the "journeys.yaml" a customer commits, or the
+      output of the explorer agent / PROD-analytics). Each carries a criticality and a risk-$ weight —
+      published on the <b>Journey alignment</b> page as covered / at-risk and potential $ exposure.</p>
+
+    <div class="jrn-row jrn-head">
+      <span>Journey</span><span>Criticality</span><span>Risk $</span><span>Source</span><span>Alignment</span><span></span>
+    </div>
+    <div class="jrn-row" *ngFor="let j of journeys; let i = index">
+      <input [(ngModel)]="j.name" placeholder="Journey name" />
+      <select [(ngModel)]="j.criticality"><option>low</option><option>medium</option><option>high</option></select>
+      <input type="number" [(ngModel)]="j.weightUsd" min="0" step="100" />
+      <input [(ngModel)]="j.source" placeholder="Jira-1042 / PROD" />
+      <select [(ngModel)]="j.alignment">
+        <option value="aligned">aligned</option><option value="partial">partial</option>
+        <option value="unaligned">unaligned</option><option value="no-test">no-test</option>
+      </select>
+      <button class="link-x ghost" (click)="removeJourney(i)" title="Remove">✕</button>
+    </div>
+
+    <div class="cfg-actions" style="margin-top:14px">
+      <button class="secondary" (click)="addJourney()">+ Add journey</button>
+      <button class="primary" (click)="saveJourneys()">Save journeys</button>
+      <button class="ghost" (click)="resetJourneys()">Reset to sample</button>
+      <span class="cfg-msg ok" *ngIf="jrnMsg">{{ jrnMsg }}</span>
+    </div>
+  </div>
+
   <!-- ───────── static stubs ───────── -->
   <div class="panel" *ngIf="tab === 'users'">
     <h3>User &amp; Role Management</h3>
@@ -116,9 +149,13 @@ const BUILTIN = [
 })
 export class ConfigurationComponent implements OnInit {
   private readonly svc = inject(QualityService);
+  private readonly journeyStore = inject(JourneyStore);
 
   tab: Tab = 'rules';
   builtin = BUILTIN;
+
+  journeys: Journey[] = [];
+  jrnMsg = '';
 
   multiplier = 1;
   usdPerPoint = 40;
@@ -133,16 +170,30 @@ export class ConfigurationComponent implements OnInit {
   private saved: RulesetConfig = { settings: {}, rules: [] };
 
   demoUsers = [
-    { name: 'Arun J', email: 'aj@procap.ai', role: 'Exec', initials: 'AJ' },
-    { name: 'Manuel Johnson', email: 'manuel.johnson@procap.ai', role: 'Arch/Lead', initials: 'MJ' },
-    { name: 'Balaji Umapaty', email: 'balaji@procap.ai', role: 'Engineer', initials: 'BU' },
+    { name: 'Arun J', email: 'aj@meridian.app', role: 'Exec', initials: 'AJ' },
+    { name: 'Manuel Johnson', email: 'manuel.j@meridian.app', role: 'Arch/Lead', initials: 'MJ' },
+    { name: 'Balaji Umapaty', email: 'balaji@meridian.app', role: 'Engineer', initials: 'BU' },
   ];
   demoRepos = [
     { repo: 'panangad/sample-proj-playwright', stack: 'playwright', active: true },
     { repo: 'panangad/sample-proj', stack: 'python', active: false },
   ];
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void { this.load(); this.journeys = this.journeyStore.list(); }
+
+  addJourney(): void {
+    this.journeys.push({
+      id: 'j-' + Math.random().toString(36).slice(2, 8), name: '', criticality: 'medium',
+      weightUsd: 1000, source: 'hand-authored', alignment: 'no-test', confidence: 0,
+    });
+  }
+  removeJourney(i: number): void { this.journeys.splice(i, 1); }
+  saveJourneys(): void {
+    this.journeyStore.save(this.journeys.filter(j => j.name.trim()));
+    this.jrnMsg = 'Saved — reflected on Journey alignment & Coverage gaps.';
+    setTimeout(() => (this.jrnMsg = ''), 4000);
+  }
+  resetJourneys(): void { this.journeys = this.journeyStore.resetToSeed(); this.jrnMsg = ''; }
 
   private load(): void {
     this.svc.getRuleset().subscribe({

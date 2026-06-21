@@ -20,7 +20,7 @@ interface Gap extends QualityItem { categoryTitle: string; }
     <h1>Business assurance</h1>
     <span class="sub">{{ repo }}</span>
     <span class="spacer"></span>
-    <a class="ghost-link" [routerLink]="['/quality/session', id]" *ngIf="id">← Engineering view</a>
+    <a class="ghost-link" [routerLink]="['/quality/session', id, 'optimize']" *ngIf="id">Targeted actions to improve →</a>
   </div>
 
   <ng-container *ngIf="analysis as a; else loading">
@@ -33,7 +33,7 @@ interface Gap extends QualityItem { categoryTitle: string; }
       <div class="g-kpis">
         <div class="g-kpi"><b>{{ coverage }}%</b><span>Coverage</span></div>
         <div class="g-kpi"><b>{{ issues }}</b><span>Open gaps</span></div>
-        <div class="g-kpi"><b>{{ commits }}</b><span>Mutations · history</span></div>
+        <div class="g-kpi"><b>{{ commits }}</b><span>Commits · history</span></div>
         <div class="g-kpi"><b>{{ a.scores.overall }}</b><span>Assurance index</span></div>
       </div>
 

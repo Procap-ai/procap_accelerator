@@ -32,20 +32,20 @@
       <i class="info">i<span class="tip">Average rule-engine health across the fleet: 100 − Σ(rule weight × occurrences) per repo, clamped.</span></i></span>
   </div>
   <div class="kpi">
-    <span class="val sky">{{ avgCoverage }}%</span>
-    <span class="lbl">Avg. test coverage
-      <i class="info">i<span class="tip">Mean test-coverage % across analysed repos. For E2E suites, coverage = breadth of target-app flows.</span></i></span>
-  </div>
-  <div class="kpi">
     <span class="val">{{ totalTests | number }}</span>
     <span class="lbl">Total tests
       <i class="info">i<span class="tip">Sum of test()/it() blocks across every repo in the fleet.</span></i></span>
   </div>
   <div class="kpi">
+    <span class="val" [class.warn]="totalIssues > 0">{{ totalIssues | number }}</span>
+    <span class="lbl">Open deviations
+      <i class="info">i<span class="tip">Total rule deviations / open fix items across analysed repos.</span></i></span>
+  </div>
+  <div class="kpi">
     <span class="val" [class.warn]="totalFlaky > 0">{{ totalFlaky }}</span>
-    <span class="lbl">Est. flaky tests
+    <span class="lbl">Failures / flaky
       <span class="tag" *ngIf="hasScan" style="background:#3a2f1a;color:#f5c87a">modelled</span>
-      <i class="info">i<span class="tip">Modelled estimate from flaky-prone rule hits across the fleet. Financial ($) impact is shown only on the Exec Savings &amp; Forecast view.</span></i></span>
+      <i class="info">i<span class="tip">Modelled estimate of failure-prone / flaky tests across the fleet. Financial ($) impact is shown only on the Exec Savings &amp; Forecast view.</span></i></span>
   </div>
 </div>
 
@@ -70,8 +70,7 @@
               <app-spark [data]="trends[r.repoUrl]" [color]="bandColor(r.scores?.overall || 50)"></app-spark>
               <span class="rr-trendlbl">30d</span>
             </div>
-            <div class="rr-metric"><b style="color:var(--accent)">{{ r.coverage ?? '—' }}%</b><span>cov</span></div>
-            <div class="rr-metric"><b [style.color]="(r.issues || 0) > 0 ? 'var(--warn)' : 'var(--text)'">{{ r.issues ?? '—' }}</b><span>issues</span></div>
+            <div class="rr-metric"><b [style.color]="(r.issues || 0) > 0 ? 'var(--warn)' : 'var(--text)'">{{ r.issues ?? '—' }}</b><span>deviations</span></div>
             <button class="link-x ghost" (click)="remove(r, $event)" title="Remove" style="padding:2px 6px">✕</button>
           </div>
         </div>

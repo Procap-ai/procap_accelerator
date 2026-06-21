@@ -1,8 +1,8 @@
 <div class="quality">
   <header class="topbar">
-    <a class="brand" routerLink="/">Procap</a>
+    <a class="brand" routerLink="/">Meridian</a>
     <span class="divider">/</span>
-    <a class="feature link" routerLink="/quality">Quality &amp; Coverage</a>
+    <a class="feature link" routerLink="/quality">Intelligent Maintenance</a>
     <span class="spacer"></span>
     <a class="ghost-link" routerLink="/quality">← All repos</a>
   </header>
@@ -17,22 +17,43 @@
       <div style="display:flex;gap:10px;align-items:center">
         <a *ngIf="isAnalyzed" class="ghost-link" [routerLink]="['/quality/genome', s.session_id]">Business view →</a>
         <a *ngIf="s.pr_url" class="pr-link" [href]="s.pr_url" target="_blank" rel="noopener">View PR ↗</a>
+        <a *ngIf="isAnalyzed" class="primary" [routerLink]="['/quality/session', s.session_id, 'optimize']"
+           style="padding:7px 14px;border-radius:8px;text-decoration:none">Take action &amp; Optimize →</a>
       </div>
     </div>
 
-    <!-- progress feed -->
-    <div class="feed" *ngIf="isActive(s.status) || !isAnalyzed">
+    <!-- change-detection banner: new commits since the scan baseline -->
+    <div class="change-banner" *ngIf="hasNewCommits">
+      <span class="cb-ico">⟳</span>
+      <div class="cb-body">
+        <b>New commits since last scan.</b>
+        <span *ngIf="latestCommitSubject">Latest: “{{ latestCommitSubject }}”.</span>
+        Re-run the analysis to refresh status &amp; findings.
+      </div>
+      <button class="primary" (click)="reanalyze()">Re-analyze →</button>
+    </div>
+
+    <!-- non-blocking activity strip: a job is running, but the overview stays visible -->
+    <div class="activity-strip" *ngIf="isActive(s.status)">
+      <span class="dot pulse"></span>
+      <span class="as-text">
+        <b>{{ s.status === 'analyzing' ? 'Analyzing repository' : s.status === 'working' ? 'Implementing selected fixes'
+            : s.status === 'opening_pr' ? 'Opening pull request' : 'Working' }}…</b>
+        <span class="as-sub" *ngIf="s.progress?.length">{{ progressLine(s.progress[s.progress.length - 1]) }}</span>
+      </span>
+      <span class="as-live">live</span>
+    </div>
+
+    <!-- first-run progress feed (only before the first analysis lands) -->
+    <div class="feed" *ngIf="isActive(s.status) && !isAnalyzed">
       <div *ngFor="let p of s.progress; trackBy: trackByTs"
            class="event" [attr.data-type]="p.type" [class.system]="p.source === 'system'">
         <span class="dot"></span>
         <span class="text">{{ progressLine(p) }}</span>
       </div>
-      <div *ngIf="isActive(s.status)" class="event working">
-        <span class="dot pulse"></span><span class="text">Working…</span>
-      </div>
     </div>
 
-    <!-- ───────── Scorecard + plan (after analysis) ───────── -->
+    <!-- ───────── Overview (after analysis) ───────── -->
     <ng-container *ngIf="isAnalyzed && analysis as a">
       <div class="card analysis">
         <h3>Report card</h3>
@@ -42,22 +63,10 @@
       <!-- score rings row -->
       <div class="score-row">
         <div class="score-cell hero">
-          <app-score-ring [current]="overallNow" [projected]="overallProjected" label="Overall" [size]="120"></app-score-ring>
+          <app-score-ring [current]="overallNow" [projected]="overallNow" label="Overall" [size]="120"></app-score-ring>
         </div>
         <div class="score-cell" *ngFor="let c of categories; trackBy: trackById">
-          <app-score-ring [current]="c.score" [projected]="projectedScore(c)" [label]="c.title" [size]="92"></app-score-ring>
-        </div>
-      </div>
-
-      <!-- coverage panel -->
-      <div class="card cover-panel" *ngIf="coverageCategory as cov">
-        <div class="cover-left">
-          <app-donut [current]="coverageNow" [projected]="coverageProjected"
-                     label="Test coverage" [size]="158"></app-donut>
-        </div>
-        <div class="cover-right">
-          <h3>Coverage by feature</h3>
-          <app-bar-list [rows]="coverageBarRows"></app-bar-list>
+          <app-score-ring [current]="c.score" [projected]="c.score" [label]="c.title" [size]="92"></app-score-ring>
         </div>
       </div>
 
@@ -74,8 +83,21 @@
             <span class="lbl">Rule deviations
               <i class="info">i<span class="tip">Total rule violations found across all disciplines (waiting, locators, structure, isolation, auth, assertions).</span></i></span></div>
           <div class="kpi"><span class="val warn">{{ sc.risk.est_flaky_tests }}</span>
-            <span class="lbl">Est. flaky <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span>
-              <i class="info">i<span class="tip">Modelled estimate from flaky-prone rule hits (hard waits, networkidle, brittle locators). Not measured from CI runs.</span></i></span></div>
+            <span class="lbl">Failures / flaky <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span>
+              <i class="info">i<span class="tip">Modelled estimate of failure-prone / flaky tests from flaky rule hits (hard waits, networkidle, brittle locators). CI-history categorization is a later iteration.</span></i></span></div>
+        </div>
+
+        <!-- execution economics — per-repo cost-per-run & frequency (AJ: belongs on Overview) -->
+        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px" *ngIf="hasEconomics">
+          <div class="kpi"><span class="val sky">{{ runsPerYear | number }}</span>
+            <span class="lbl">Runs / year <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span>
+              <i class="info">i<span class="tip">Assumed CI execution frequency for this repo. Tunable in Configuration.</span></i></span></div>
+          <div class="kpi"><span class="val">\${{ costPerRun | number }}</span>
+            <span class="lbl">Cost per execution <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span>
+              <i class="info">i<span class="tip">Annual upkeep ÷ runs/year — the maintenance cost attributable to each CI run.</span></i></span></div>
+          <div class="kpi"><span class="val warn">\${{ annualUpkeep | number }}</span>
+            <span class="lbl">Annual upkeep <span class="tag" style="background:#3a2f1a;color:#f5c87a">modelled</span>
+              <i class="info">i<span class="tip">Modelled annual maintenance cost from flaky/slow patterns at the blended rate.</span></i></span></div>
         </div>
 
         <div class="fleet-grid" style="margin-bottom:14px">
@@ -130,14 +152,14 @@
           </h3>
           <ng-container *ngIf="showExecDollars; else execHidden">
             <div class="savings-hero" style="margin-bottom:12px">
-              <span class="save-num bad">${{ u.dollars | number }}</span>
+              <span class="save-num bad">\${{ u.dollars | number }}</span>
               <span class="save-side">tech debt / yr<b>{{ u.points }} weighted points</b></span>
-              <span class="save-side">${{ u.usd_per_point }}/pt × {{ u.tech_debt_multiplier }} multiplier<b>tunable in Configuration</b></span>
+              <span class="save-side">\${{ u.usd_per_point }}/pt × {{ u.tech_debt_multiplier }} multiplier<b>tunable in Configuration</b></span>
             </div>
             <div class="hot-row" *ngFor="let b of u.breakdown">
               <code style="flex:1">{{ b.label }}</code>
               <span class="churn">{{ b.count }}× · w{{ b.weight }}</span>
-              <span class="churn" style="color:var(--bad)">${{ b.usd | number }}</span>
+              <span class="churn" style="color:var(--bad)">\${{ b.usd | number }}</span>
             </div>
             <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:10px">formula: {{ u.formula }}</p>
           </ng-container>
@@ -185,131 +207,17 @@
         </div>
       </div>
 
-      <!-- plan: tree-select + sticky estimate -->
-      <div class="plan-layout">
-        <div class="plan-tree">
-          <h3 class="section-title">Select what to improve</h3>
-
-          <div class="cat" *ngFor="let c of categories; trackBy: trackById">
-            <div class="cat-head">
-              <span class="cb" [attr.data-state]="nodeState({id:c.id, title:c.title, impact:0, est_effort:'low', children:c.items})"
-                    (click)="toggleNode({id:c.id, title:c.title, impact:0, est_effort:'low', children:c.items})"></span>
-              <span class="cat-title">{{ c.title }}</span>
-              <span class="score-pill" [attr.data-kind]="c.kind">{{ c.score }}/100</span>
-              <span class="cat-sub" *ngIf="c.summary">{{ c.summary }}</span>
-            </div>
-
-            <div class="items">
-              <div class="item" *ngFor="let i of c.items; trackBy: trackById">
-                <div class="item-row" [class.has-kids]="hasChildren(i)">
-                  <span class="cb" [attr.data-state]="nodeState(i)" (click)="toggleNode(i)"></span>
-                  <span class="caret" *ngIf="hasChildren(i)" (click)="toggleExpand(i.id)"
-                        [class.open]="isExpanded(i.id)">▸</span>
-                  <span class="caret-spacer" *ngIf="!hasChildren(i)"></span>
-                  <div class="item-body" (click)="hasChildren(i) ? toggleExpand(i.id) : toggleNode(i)">
-                    <div class="item-title-row">
-                      <span class="item-title">{{ i.title }}</span>
-                      <span class="metric-chip" *ngIf="metricChip(i)">{{ metricChip(i) }}</span>
-                      <span class="impact" *ngIf="i.impact">+{{ i.impact }}</span>
-                      <span class="effort" [attr.data-e]="i.est_effort">{{ i.est_effort }}</span>
-                    </div>
-                    <div class="item-desc" *ngIf="i.description">{{ i.description }}</div>
-                  </div>
-                </div>
-
-                <div class="children" *ngIf="hasChildren(i) && isExpanded(i.id)">
-                  <div class="item-row child" *ngFor="let ch of i.children; trackBy: trackById">
-                    <span class="cb" [attr.data-state]="nodeState(ch)" (click)="toggleNode(ch)"></span>
-                    <span class="caret-spacer"></span>
-                    <div class="item-body" (click)="toggleNode(ch)">
-                      <div class="item-title-row">
-                        <span class="item-title">{{ ch.title }}</span>
-                        <span class="metric-chip" *ngIf="metricChip(ch)">{{ metricChip(ch) }}</span>
-                        <span class="impact" *ngIf="ch.impact">+{{ ch.impact }}</span>
-                        <span class="effort" [attr.data-e]="ch.est_effort">{{ ch.est_effort }}</span>
-                      </div>
-                      <div class="item-desc" *ngIf="ch.description">{{ ch.description }}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <!-- footer CTA into the action page -->
+      <div class="card" style="display:flex;align-items:center;gap:14px">
+        <div style="flex:1">
+          <h3 style="margin:0 0 4px">Ready to improve this repo?</h3>
+          <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin:0">
+            Review fix suggestions by category, select what to implement, and open a pull request.</p>
         </div>
-
-        <!-- sticky Projected Impact (redesigned per AJ email, image007) -->
-        <aside class="estimate">
-          <div class="estimate-card pi-card">
-            <div class="pi-head"><span class="pi-ico">∿</span> Projected Impact</div>
-            <p class="pi-sub">If you implement the selected fixes — before <span class="arrow">→</span> after</p>
-
-            <!-- overall quality score before → after with gain bar -->
-            <div class="pi-block">
-              <div class="pi-score-row">
-                <span class="pi-lbl">Overall quality score</span>
-                <span class="pi-nums">{{ overallNow }} <span class="arrow">→</span>
-                  <b [class.up]="overallProjected > overallNow">{{ overallProjected }}</b>
-                  <span class="pi-delta" *ngIf="overallProjected !== overallNow">▲ +{{ overallProjected - overallNow }}</span></span>
-              </div>
-              <div class="pi-bar">
-                <span class="pi-fill-now" [style.width.%]="overallNow"></span>
-                <span class="pi-fill-gain" [style.left.%]="overallNow" [style.width.%]="overallProjected - overallNow"></span>
-              </div>
-            </div>
-
-            <div class="pi-grid">
-              <div class="pi-cell" *ngIf="coverageCategory">
-                <span class="pi-cell-lbl">Coverage</span>
-                <span class="pi-cell-val">{{ coverageNow }}% <span class="arrow">→</span>
-                  <b [class.up]="coverageProjected > coverageNow">{{ coverageProjected }}%</b></span>
-              </div>
-              <div class="pi-cell" *ngIf="countCategories.length">
-                <span class="pi-cell-lbl">Open issues</span>
-                <span class="pi-cell-val">{{ totalIssuesNow }} <span class="arrow">→</span>
-                  <b [class.down]="totalIssuesProjected < totalIssuesNow">{{ totalIssuesProjected }}</b>
-                  <span class="pi-noop" *ngIf="totalIssuesProjected === totalIssuesNow">no new issues</span></span>
-              </div>
-              <div class="pi-cell">
-                <span class="pi-cell-lbl">Effort</span>
-                <span class="pi-effort">
-                  <span class="pi-eb" [class.on]="selectedCount > 0"></span>
-                  <span class="pi-eb" [class.on]="selectedCount > 2"></span>
-                  <span class="pi-eb" [class.on]="selectedCount > 4"></span>
-                  <b>{{ effortLabel }}</b></span>
-              </div>
-            </div>
-
-            <div class="est-count">✓ {{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected</div>
-            <button class="primary block" [disabled]="!selectedCount || launching" (click)="implement()">
-              {{ launching ? 'Starting…' : 'Implement selected →' }}
-            </button>
-            <p class="est-hint">Bundled into one branch &amp; pull request.</p>
-          </div>
-        </aside>
+        <a class="primary" [routerLink]="['/quality/session', s.session_id, 'optimize']"
+           style="padding:10px 18px;border-radius:8px;text-decoration:none">Take action &amp; Optimize →</a>
       </div>
     </ng-container>
-
-    <!-- task result + PR -->
-    <div class="card result" *ngIf="s.task_result as t">
-      <h3>Change ready <span class="status-pill" [attr.data-s]="t.status">{{ t.status }}</span></h3>
-      <p>{{ t.summary }}</p>
-      <ul class="files" *ngIf="t.files_changed?.length">
-        <li *ngFor="let f of t.files_changed"><code>{{ f }}</code></li>
-      </ul>
-      <p class="verify" *ngIf="t.verification"><strong>Verified:</strong> {{ t.verification }}</p>
-
-      <div class="pr" *ngIf="!s.pr_url">
-        <button class="primary" (click)="toggleTokenInput()" *ngIf="!showTokenInput">Open Pull Request</button>
-        <div class="token-row" *ngIf="showTokenInput">
-          <input type="password" [(ngModel)]="githubToken"
-                 placeholder="GitHub PAT (repo + workflow scope)" autocomplete="off" />
-          <button class="primary" (click)="submitPr()">Create PR</button>
-          <button class="ghost" (click)="toggleTokenInput()">Cancel</button>
-        </div>
-        <p class="hint">Use a token with <code>repo</code> + <code>workflow</code> scopes (the latter is needed for CI-pipeline fixes that touch <code>.github/workflows/</code>). Sent once to open the PR and never stored on our servers.</p>
-        <p class="validation bad" *ngIf="prError">{{ prError }}</p>
-      </div>
-    </div>
 
     <div class="card error" *ngIf="s.error">
       <h3>Something went wrong</h3>

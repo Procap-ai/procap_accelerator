@@ -276,4 +276,33 @@ export class QualityService {
     return this.http.post<{ ok: boolean }>(
       `${this.apiBase}/quality/sessions/${sessionId}/command`, { type: 'open_pr', github_token: githubToken });
   }
+
+  // ── direct GitHub calls (public, unauthenticated; rate-limited 60/hr — fine for the demo) ──
+  /** Current HEAD commit SHA of a repo's branch — used for change-detection ("new commits since
+   *  last scan"). owner/repo parsed from the GitHub URL; branch defaults to the repo default. */
+  githubHead(owner: string, repo: string, branch = 'HEAD'): Observable<GithubCommit> {
+    const ref = branch === 'HEAD' ? '' : `/${branch}`;
+    return this.http.get<GithubCommit>(
+      `https://api.github.com/repos/${owner}/${repo}/commits${ref || '/HEAD'}`);
+  }
+
+  /** Live state of a pull request (open / closed / merged) for the Approval queue PR tracker. */
+  githubPr(owner: string, repo: string, num: number): Observable<GithubPr> {
+    return this.http.get<GithubPr>(`https://api.github.com/repos/${owner}/${repo}/pulls/${num}`);
+  }
+}
+
+export interface GithubCommit {
+  sha: string;
+  commit: { message: string; author: { name: string; date: string } };
+}
+export interface GithubPr {
+  number: number; state: 'open' | 'closed'; merged: boolean; title: string;
+  html_url: string; created_at: string; updated_at: string; user: { login: string };
+}
+
+// ── candidate user journeys + risk weighting (Configuration → Journeys; feeds AC alignment) ──
+export interface CandidateJourney {
+  id: string; name: string; criticality: 'low' | 'medium' | 'high';
+  weightUsd: number; source: string;
 }

@@ -1,0 +1,170 @@
+<div class="quality">
+  <header class="topbar">
+    <a class="brand" routerLink="/">Meridian</a>
+    <span class="divider">/</span>
+    <a class="feature link" routerLink="/quality">Intelligent Maintenance</a>
+    <span class="spacer"></span>
+    <a class="ghost-link" *ngIf="session as s" [routerLink]="['/quality/session', s.session_id]">← Back to overview</a>
+  </header>
+
+  <section *ngIf="session as s" class="session">
+    <div class="session-head">
+      <div>
+        <span class="repo">{{ shortRepo(s.repo_url) }}</span>
+        <span class="badge" [attr.data-status]="s.status">{{ s.status }}</span>
+        <h1 style="font-size:20px;margin:8px 0 0">Take action &amp; Optimize</h1>
+      </div>
+      <a *ngIf="s.pr_url" class="pr-link" [href]="s.pr_url" target="_blank" rel="noopener">View PR ↗</a>
+    </div>
+
+    <!-- activity strip while a job runs (view stays visible) -->
+    <div class="activity-strip" *ngIf="isActive(s.status)">
+      <span class="dot pulse"></span>
+      <span class="as-text"><b>{{ s.status === 'working' ? 'Implementing selected fixes'
+          : s.status === 'opening_pr' ? 'Opening pull request' : 'Working' }}…</b>
+        <span class="as-sub" *ngIf="s.progress?.length">{{ progressLine(s.progress[s.progress.length - 1]) }}</span></span>
+      <span class="as-live">live</span>
+    </div>
+
+    <p class="empty-hint" *ngIf="!isAnalyzed && !isActive(s.status)" style="margin:8px 0">
+      No analysis available yet. Return to the overview and run an analysis first.</p>
+
+    <ng-container *ngIf="isAnalyzed">
+      <!-- Fix-type filter + bulk controls -->
+      <div class="panel" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <label class="cfg-label" style="margin:0">Fix type</label>
+        <select class="repo-select" [(ngModel)]="fixType" style="min-width:200px">
+          <option *ngFor="let f of fixTypes" [value]="f.id">{{ f.label }}</option>
+        </select>
+        <span class="rule-desc" style="text-transform:none;letter-spacing:0">{{ visibleLeafCount }} fixes in view</span>
+        <span class="spacer" style="flex:1"></span>
+        <button class="ghost" (click)="selectAllVisible()">Select all in view</button>
+        <button class="ghost" (click)="clearSelection()">Clear</button>
+      </div>
+
+      <div class="plan-layout">
+        <div class="plan-tree">
+          <h3 class="section-title">Fix suggestions <span class="rule-desc" style="text-transform:none;letter-spacing:0">act one-by-one or in bulk</span></h3>
+
+          <p class="empty-hint" *ngIf="!visibleCategories.length" style="margin:6px 0">
+            No fixes of this type. Pick another Fix type.</p>
+
+          <div class="cat" *ngFor="let c of visibleCategories; trackBy: trackById">
+            <div class="cat-head">
+              <span class="cb" [attr.data-state]="nodeState({id:c.id, title:c.title, impact:0, est_effort:'low', children:c.items})"
+                    (click)="toggleNode({id:c.id, title:c.title, impact:0, est_effort:'low', children:c.items})"></span>
+              <span class="cat-title">{{ c.title }}</span>
+              <span class="score-pill" [attr.data-kind]="c.kind">{{ c.score }}/100</span>
+              <span class="cat-sub" *ngIf="c.summary">{{ c.summary }}</span>
+            </div>
+
+            <div class="items">
+              <div class="item" *ngFor="let i of c.items; trackBy: trackById">
+                <div class="item-row" [class.has-kids]="hasChildren(i)">
+                  <span class="cb" [attr.data-state]="nodeState(i)" (click)="toggleNode(i)"></span>
+                  <span class="caret" *ngIf="hasChildren(i)" (click)="toggleExpand(i.id)" [class.open]="isExpanded(i.id)">▸</span>
+                  <span class="caret-spacer" *ngIf="!hasChildren(i)"></span>
+                  <div class="item-body" (click)="hasChildren(i) ? toggleExpand(i.id) : toggleNode(i)">
+                    <div class="item-title-row">
+                      <span class="item-title">{{ i.title }}</span>
+                      <span class="metric-chip" *ngIf="metricChip(i)">{{ metricChip(i) }}</span>
+                      <span class="impact" *ngIf="i.impact">+{{ i.impact }}</span>
+                      <span class="effort" [attr.data-e]="i.est_effort">{{ i.est_effort }}</span>
+                    </div>
+                    <div class="item-desc" *ngIf="i.description">{{ i.description }}</div>
+                  </div>
+                </div>
+
+                <div class="children" *ngIf="hasChildren(i) && isExpanded(i.id)">
+                  <div class="item-row child" *ngFor="let ch of i.children; trackBy: trackById">
+                    <span class="cb" [attr.data-state]="nodeState(ch)" (click)="toggleNode(ch)"></span>
+                    <span class="caret-spacer"></span>
+                    <div class="item-body" (click)="toggleNode(ch)">
+                      <div class="item-title-row">
+                        <span class="item-title">{{ ch.title }}</span>
+                        <span class="metric-chip" *ngIf="metricChip(ch)">{{ metricChip(ch) }}</span>
+                        <span class="impact" *ngIf="ch.impact">+{{ ch.impact }}</span>
+                        <span class="effort" [attr.data-e]="ch.est_effort">{{ ch.est_effort }}</span>
+                      </div>
+                      <div class="item-desc" *ngIf="ch.description">{{ ch.description }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- sticky Projected Impact -->
+        <aside class="estimate">
+          <div class="estimate-card pi-card">
+            <div class="pi-head"><span class="pi-ico">∿</span> Projected Impact</div>
+            <p class="pi-sub">Actual with Meridian vs projected without — before <span class="arrow">→</span> after</p>
+
+            <div class="pi-block">
+              <div class="pi-score-row">
+                <span class="pi-lbl">Overall quality score</span>
+                <span class="pi-nums">{{ overallNow }} <span class="arrow">→</span>
+                  <b [class.up]="overallProjected > overallNow">{{ overallProjected }}</b>
+                  <span class="pi-delta" *ngIf="overallProjected !== overallNow">▲ +{{ overallProjected - overallNow }}</span></span>
+              </div>
+              <div class="pi-bar">
+                <span class="pi-fill-now" [style.width.%]="overallNow"></span>
+                <span class="pi-fill-gain" [style.left.%]="overallNow" [style.width.%]="overallProjected - overallNow"></span>
+              </div>
+            </div>
+
+            <div class="pi-grid">
+              <div class="pi-cell" *ngIf="countCategories.length">
+                <span class="pi-cell-lbl">Open issues</span>
+                <span class="pi-cell-val">{{ totalIssuesNow }} <span class="arrow">→</span>
+                  <b [class.down]="totalIssuesProjected < totalIssuesNow">{{ totalIssuesProjected }}</b>
+                  <span class="pi-noop" *ngIf="totalIssuesProjected === totalIssuesNow">no new issues</span></span>
+              </div>
+              <div class="pi-cell">
+                <span class="pi-cell-lbl">Effort</span>
+                <span class="pi-effort">
+                  <span class="pi-eb" [class.on]="selectedCount > 0"></span>
+                  <span class="pi-eb" [class.on]="selectedCount > 2"></span>
+                  <span class="pi-eb" [class.on]="selectedCount > 4"></span>
+                  <b>{{ effortLabel }}</b></span>
+              </div>
+            </div>
+
+            <div class="est-count">✓ {{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected</div>
+            <button class="primary block" [disabled]="!selectedCount || launching" (click)="implement()">
+              {{ launching ? 'Starting…' : 'Implement selected →' }}
+            </button>
+            <p class="est-hint">Bundled into one branch &amp; pull request.</p>
+          </div>
+        </aside>
+      </div>
+
+      <!-- task result + PR -->
+      <div class="card result" *ngIf="s.task_result as t">
+        <h3>Change ready <span class="status-pill" [attr.data-s]="t.status">{{ t.status }}</span></h3>
+        <p>{{ t.summary }}</p>
+        <ul class="files" *ngIf="t.files_changed?.length">
+          <li *ngFor="let f of t.files_changed"><code>{{ f }}</code></li>
+        </ul>
+        <p class="verify" *ngIf="t.verification"><strong>Verified:</strong> {{ t.verification }}</p>
+
+        <div class="pr" *ngIf="!s.pr_url">
+          <button class="primary" (click)="toggleTokenInput()" *ngIf="!showTokenInput">Open Pull Request</button>
+          <div class="token-row" *ngIf="showTokenInput">
+            <input type="password" [(ngModel)]="githubToken" placeholder="GitHub PAT (repo + workflow scope)" autocomplete="off" />
+            <button class="primary" (click)="submitPr()">Create PR</button>
+            <button class="ghost" (click)="toggleTokenInput()">Cancel</button>
+          </div>
+          <p class="hint">Use a token with <code>repo</code> + <code>workflow</code> scopes. Sent once to open the PR and never stored on our servers.</p>
+          <p class="validation bad" *ngIf="prError">{{ prError }}</p>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="card error" *ngIf="s.error">
+      <h3>Something went wrong</h3>
+      <p>{{ s.error }}</p>
+    </div>
+  </section>
+</div>

@@ -10,6 +10,7 @@ import { VisualSearchComponent } from './pages/samples/visual-search/visual-sear
 import { ObservatoryShellComponent } from './pages/quality/shell/observatory-shell';
 import { QualityComponent } from './pages/quality/quality';
 import { QualitySessionComponent } from './pages/quality/session/quality-session';
+import { OptimizeComponent } from './pages/quality/optimize/optimize';
 import { QueueComponent } from './pages/quality/queue/queue';
 import { AdherenceComponent } from './pages/quality/adherence/adherence';
 import { SavingsComponent } from './pages/quality/savings/savings';
@@ -29,6 +30,7 @@ export const routes: Routes = [
     children: [
       { path: '', component: QualityComponent },
       { path: 'session/:id', component: QualitySessionComponent },
+      { path: 'session/:id/optimize', component: OptimizeComponent },
       { path: 'queue', component: QueueComponent },
       { path: 'adherence', component: AdherenceComponent },
       { path: 'savings', component: SavingsComponent },

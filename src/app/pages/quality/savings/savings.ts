@@ -7,7 +7,7 @@ import { FleetRepo, QualityService } from '../../../services/quality.service';
 
 const RATE = 65; // blended $/hr — mirrors backend EFFORT_HOURS model
 
-/** Cumulative Savings — estimated maintenance-time saved by the items Procap has shipped.
+/** Cumulative Savings — estimated maintenance-time saved by the items Meridian has shipped.
  *  Headline figures are real (from the fleet snapshot totals); the projection shape is an
  *  estimate, labelled "est." per the agreed approach. */
 @Component({
@@ -26,7 +26,7 @@ const RATE = 65; // blended $/hr — mirrors backend EFFORT_HOURS model
       <span class="save-num">\${{ total | number }}</span>
       <span class="est-tag">est</span>
       <span class="save-side">saved<b>{{ hours | number }} hrs</b></span>
-      <span class="save-side">at \${{ rate }}/hr blended<b>{{ items }} items shipped</b></span>
+      <span class="save-side">items shipped<b>{{ items }}</b></span>
     </div>
     <div class="breakdown">
       <div class="bd"><span class="sw" style="background:#22c55e"></span><b>52%</b> Self-healing &amp; auto-fix</div>
@@ -63,7 +63,7 @@ const RATE = 65; // blended $/hr — mirrors backend EFFORT_HOURS model
       <app-trend-line [series]="series" [categories]="months" [colors]="trendColors"
                       [height]="240" suffix="h"></app-trend-line>
       <p class="empty-hint" style="font-size:12px;margin:8px 0 0">
-        Red = unmanaged upkeep as the suite grows. Green = actual upkeep with Procap. The wedge between is the saving.</p>
+        Red = unmanaged upkeep as the suite grows. Green = actual upkeep with Meridian. The wedge between is the saving.</p>
     </div>
 
     <div class="panel">
@@ -122,8 +122,8 @@ export class SavingsComponent implements OnInit {
     const projected = this.months.map((_, i) => Math.round(peak * (0.55 + i * 0.09)));     // climbs
     const actual = this.months.map((_, i) => Math.round(peak * (0.55 - i * 0.075)));        // falls
     this.series = [
-      { name: 'Projected without Procap', data: projected },
-      { name: 'Actual with Procap', data: actual.map(v => Math.max(8, v)) },
+      { name: 'Projected without Meridian', data: projected },
+      { name: 'Actual with Meridian', data: actual.map(v => Math.max(8, v)) },
     ];
   }
 }
