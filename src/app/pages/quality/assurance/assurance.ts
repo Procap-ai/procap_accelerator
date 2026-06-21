@@ -69,8 +69,8 @@ interface CoverageGap { j: Journey; cur: number; target: number; points: number;
       <div class="panel">
         <h3>Test coverage <span class="score-pill" data-kind="coverage">{{ coveragePct }}/100</span>
           <span class="spacer" style="flex:1"></span>
-          <span class="rule-desc" style="text-transform:none;letter-spacing:0">{{ coverageGaps.length }} gaps · projected uplift to assurance index
-            <b style="color:var(--good)">+{{ projectedIndex - assuranceIndex }}</b></span></h3>
+          <span class="rule-desc" style="text-transform:none;letter-spacing:0">{{ coverageGaps.length }} gaps · full uplift potential to assurance index
+            <b style="color:var(--good)">+{{ potentialIndex - assuranceIndex }}</b></span></h3>
         <p class="rule-desc" style="text-transform:none;letter-spacing:0;line-height:1.5;margin:0 0 12px">
           Journeys with no aligned test, or tests that are stale / point at placeholder URLs. Tick gaps to plan a coverage uplift.</p>
 
@@ -301,17 +301,25 @@ export class AssuranceComponent implements OnInit {
   }
 
   // ── coverage gaps list + projected uplift (image020 / 028 / 024) ──
+  // Open gaps = no-test OR unaligned OR partial (consistent with the "Open gaps" KPI / the doc).
   get coverageGaps(): CoverageGap[] {
-    return this.journeys.filter(j => this.isGap(j)).map(j => ({
+    return this.journeys.filter(j => this.isGap(j) || j.alignment === 'partial').map(j => ({
       j,
-      cur: j.alignment === 'unaligned' ? 5 : 0,
+      cur: j.alignment === 'partial' ? 40 : j.alignment === 'unaligned' ? 5 : 0,
       target: j.criticality === 'high' ? 80 : j.criticality === 'medium' ? 70 : 60,
       points: j.criticality === 'high' ? 40 : j.criticality === 'medium' ? 25 : 10,
     }));
   }
   gapReason(j: Journey): string {
     if (j.alignment === 'no-test') { return 'No test exercises this journey — entirely uncovered.'; }
+    if (j.alignment === 'partial') { return 'A test exists but doesn’t assert the journey outcome — partial coverage.'; }
     return 'A test exists but points at a placeholder / never exercises the journey — false confidence.';
+  }
+  /** Full potential uplift if EVERY gap were scaffolded & wired (shown in the header, like the mockup's "+75"). */
+  get potentialIndex(): number {
+    const fixed = this.coverageGaps.length;
+    const projCov = this.journeys.length ? Math.round(100 * (this.covered + fixed) / this.journeys.length) : 0;
+    return Math.round(projCov * this.wCov + 100 * this.wGap + this.acFreshness * this.wMut);
   }
   toggleGap(id: string): void { this.gapSel.has(id) ? this.gapSel.delete(id) : this.gapSel.add(id); }
   /** Projected journey coverage if the selected gaps were scaffolded & wired. */
