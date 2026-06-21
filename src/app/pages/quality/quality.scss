@@ -561,3 +561,10 @@ button {
   &.partial { background: #3a2f1a; color: #f5c87a; }
   &.unaligned { background: #3a1f2a; color: #f5a3c0; }
   &.no-test { background: #2a2f3a; color: var(--muted); } }
+
+// ── coverage gaps list (selectable) ──
+.gap-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
+  .item-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .item-desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.45; } }
+.gap-footer { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border); b { font-size: 13px; } }

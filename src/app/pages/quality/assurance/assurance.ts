@@ -3,11 +3,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
+import { DonutComponent } from '../../../components/charts/donut';
 import { QualityService } from '../../../services/quality.service';
 import { RepoStore, SavedRepo } from '../../../services/repo-store';
 import { Journey, JourneyStore } from '../../../services/journey-store';
 
 type Tab = 'coverage' | 'ac';
+interface CoverageGap { j: Journey; cur: number; target: number; points: number; }
 
 /** System & Business Assurance (AJ email + Coverage-gaps / AC-alignment docs).
  *  Tab 1 "Coverage snapshot & gaps" — the four defensible numbers (coverage %, open gaps,
@@ -17,7 +19,7 @@ type Tab = 'coverage' | 'ac';
 @Component({
   selector: 'app-assurance',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, DonutComponent],
   styleUrl: '../quality.scss',
   template: `
   <div class="obs-topbar">
@@ -32,6 +34,12 @@ type Tab = 'coverage' | 'ac';
 
   <p class="rule-desc" *ngIf="matchNote" style="text-transform:none;letter-spacing:0;margin:-4px 0 12px">
     {{ matchNote }}</p>
+
+  <div class="panel" *ngIf="selectedSession" style="display:flex;align-items:center;gap:12px;padding:10px 16px">
+    <span class="rule-desc" style="text-transform:none;letter-spacing:0;flex:1">
+      Editorial “State of quality” overview for {{ shortRepo(selectedRepo) }}.</span>
+    <a class="nav-link" [routerLink]="['/quality/genome', selectedSession]" style="padding:4px 10px">State of quality →</a>
+  </div>
 
   <div class="cfg-tabs">
     <button class="cfg-tab" [class.active]="tab === 'coverage'" (click)="tab = 'coverage'">Coverage snapshot &amp; gaps</button>
@@ -57,43 +65,94 @@ type Tab = 'coverage' | 'ac';
     </div>
 
     <div class="fleet-grid">
+      <!-- selectable coverage-gaps list (image020/028) -->
       <div class="panel">
-        <h3>Risk-weighted gaps <span class="rule-desc" style="text-transform:none;letter-spacing:0">$ exposure if a journey breaks unnoticed</span></h3>
-        <div class="jrow jhead"><span>Journey</span><span>Criticality</span><span>Alignment</span><span>Risk $</span><span></span></div>
-        <div class="jrow" *ngFor="let j of journeys">
-          <span class="jname"><b>{{ j.name }}</b><div class="jsrc">{{ j.source }}</div></span>
-          <span>{{ j.criticality }}</span>
-          <span><span class="align-pill" [ngClass]="j.alignment">{{ j.alignment }}</span></span>
-          <span [style.color]="isGap(j) ? 'var(--bad)' : 'var(--good)'">\${{ j.weightUsd | number }}</span>
-          <span><button class="ghost" style="font-size:11px;padding:3px 9px" *ngIf="isGap(j)" (click)="scaffold(j)">Scaffold</button></span>
+        <h3>Test coverage <span class="score-pill" data-kind="coverage">{{ coveragePct }}/100</span>
+          <span class="spacer" style="flex:1"></span>
+          <span class="rule-desc" style="text-transform:none;letter-spacing:0">{{ coverageGaps.length }} gaps · projected uplift to assurance index
+            <b style="color:var(--good)">+{{ projectedIndex - assuranceIndex }}</b></span></h3>
+        <p class="rule-desc" style="text-transform:none;letter-spacing:0;line-height:1.5;margin:0 0 12px">
+          Journeys with no aligned test, or tests that are stale / point at placeholder URLs. Tick gaps to plan a coverage uplift.</p>
+
+        <div class="gap-item" *ngFor="let g of coverageGaps">
+          <span class="cb" [attr.data-state]="gapSel.has(g.j.id) ? 'checked' : 'unchecked'" (click)="toggleGap(g.j.id)"></span>
+          <div style="flex:1">
+            <div class="item-title-row">
+              <span class="item-title">{{ g.j.name }}</span>
+              <span class="metric-chip">{{ g.cur }}% → {{ g.target }}%</span>
+              <span class="impact">+{{ g.points }}</span>
+              <span class="sev" [attr.data-s]="g.j.criticality === 'high' ? 'critical' : g.j.criticality === 'medium' ? 'high' : 'medium'">{{ g.j.criticality }}</span>
+            </div>
+            <div class="item-desc">{{ gapReason(g.j) }}</div>
+          </div>
+          <button class="ghost" style="font-size:11px;padding:3px 9px;white-space:nowrap" (click)="scaffold(g.j)">Scaffold</button>
         </div>
-        <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:12px">
-          Risk exposure from gaps: <b style="color:var(--bad)">\${{ riskExposure | number }}</b>.
-          Edit journeys &amp; weights in <a class="link" routerLink="/quality/config">Configuration → Journeys</a>.</p>
+        <p class="empty-hint" *ngIf="!coverageGaps.length" style="margin:6px 0">No open coverage gaps — every journey has an aligned test.</p>
+
+        <div class="gap-footer">
+          <b>{{ gapSel.size }} gap{{ gapSel.size === 1 ? '' : 's' }} selected</b>
+          <span class="spacer" style="flex:1"></span>
+          <button class="ghost" (click)="gapSel.clear()">Clear</button>
+          <button class="primary" [disabled]="!gapSel.size" (click)="scaffoldAllSelected()">Scaffold all selected</button>
+        </div>
+        <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:10px">
+          Risk exposure from gaps: <b style="color:var(--bad)">\${{ riskExposure | number }}</b> ·
+          edit journeys &amp; weights in <a class="link" routerLink="/quality/config">Configuration → Journeys</a>.</p>
       </div>
 
-      <div class="panel">
-        <h3>Assurance index — how it's computed</h3>
-        <div class="assur-formula">
-          index = coverage×<b>{{ wCov }}</b> + (1−normGaps)×<b>{{ wGap }}</b> + acFreshness×<b>{{ wMut }}</b><br>
-          = {{ coveragePct }}%×{{ wCov }} + {{ (100 - normGaps) }}%×{{ wGap }} + {{ acFreshness }}%×{{ wMut }}
-          = <b style="color:var(--good)">{{ assuranceIndex }}</b>
+      <!-- right: projected uplift when gaps selected (image024), else the index formula -->
+      <div class="panel" *ngIf="gapSel.size; else indexPanel">
+        <div class="pi-head"><span class="pi-ico">∿</span> Projected impact <span class="tag" style="background:#3a2f1a;color:#f5c87a;margin-left:8px">modelled</span></div>
+        <p class="pi-sub" style="margin:4px 0 14px">If you scaffold the {{ gapSel.size }} selected gap{{ gapSel.size === 1 ? '' : 's' }}</p>
+        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+          <app-donut [current]="coveragePct" [projected]="projectedCoverage" label="Coverage" [size]="150"></app-donut>
+          <div style="flex:1;min-width:180px">
+            <div class="pi-score-row"><span class="pi-lbl">Assurance index</span>
+              <span class="pi-nums">{{ assuranceIndex }} <span class="arrow">→</span>
+                <b class="up">{{ projectedIndex }}</b>
+                <span class="pi-delta">▲ +{{ projectedIndex - assuranceIndex }}</span></span></div>
+            <div class="pi-bar" style="margin:10px 0 16px">
+              <span class="pi-fill-now" [style.width.%]="assuranceIndex"></span>
+              <span class="pi-fill-gain" [style.left.%]="assuranceIndex" [style.width.%]="projectedIndex - assuranceIndex"></span></div>
+            <div class="pi-grid">
+              <div class="pi-cell"><span class="pi-cell-lbl">Tests scaffolded</span>
+                <span class="pi-cell-val"><b class="up">+{{ gapSel.size }}</b> new</span></div>
+              <div class="pi-cell"><span class="pi-cell-lbl">Open gaps</span>
+                <span class="pi-cell-val">{{ openGaps }} <span class="arrow">→</span> <b class="down">{{ openGaps - gapSel.size }}</b></span></div>
+            </div>
+          </div>
         </div>
-        <div class="cfg-settings" style="margin-top:14px">
-          <label>Coverage weight<input type="number" step="0.1" min="0" max="1" [(ngModel)]="wCov"></label>
-          <label>Gaps weight<input type="number" step="0.1" min="0" max="1" [(ngModel)]="wGap"></label>
-          <label>AC-freshness weight<input type="number" step="0.1" min="0" max="1" [(ngModel)]="wMut"></label>
-        </div>
-        <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:8px">
-          The formula is a property of your org — tune the weights to your priorities. The index is opinionated, not standard.</p>
+        <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:10px">
+          Scaffolds are templates with TODOs — coverage uplift realises once assertions are filled in.</p>
 
         <ng-container *ngIf="scaffolded">
-          <h3 style="margin-top:18px">Scaffold — {{ scaffolded.name }} <span class="tag" style="background:#2a2f3a;color:var(--muted)">template · TODOs</span></h3>
-          <textarea class="cfg-json" rows="12" readonly>{{ scaffoldText }}</textarea>
-          <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:6px">
-            A template with named TODO blocks — not a working test. Fill in assertions before committing.</p>
+          <h3 style="margin-top:16px">Scaffold — {{ scaffolded.name }} <span class="tag" style="background:#2a2f3a;color:var(--muted)">template · TODOs</span></h3>
+          <textarea class="cfg-json" rows="10" readonly>{{ scaffoldText }}</textarea>
         </ng-container>
       </div>
+
+      <ng-template #indexPanel>
+        <div class="panel">
+          <h3>Assurance index — how it's computed</h3>
+          <div class="assur-formula">
+            index = coverage×<b>{{ wCov }}</b> + (1−normGaps)×<b>{{ wGap }}</b> + acFreshness×<b>{{ wMut }}</b><br>
+            = {{ coveragePct }}%×{{ wCov }} + {{ (100 - normGaps) }}%×{{ wGap }} + {{ acFreshness }}%×{{ wMut }}
+            = <b style="color:var(--good)">{{ assuranceIndex }}</b>
+          </div>
+          <div class="cfg-settings" style="margin-top:14px">
+            <label>Coverage weight<input type="number" step="0.1" min="0" max="1" [(ngModel)]="wCov"></label>
+            <label>Gaps weight<input type="number" step="0.1" min="0" max="1" [(ngModel)]="wGap"></label>
+            <label>AC-freshness weight<input type="number" step="0.1" min="0" max="1" [(ngModel)]="wMut"></label>
+          </div>
+          <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin-top:8px">
+            The formula is a property of your org — tune the weights. Tick a gap on the left to preview the projected uplift.</p>
+
+          <ng-container *ngIf="scaffolded">
+            <h3 style="margin-top:18px">Scaffold — {{ scaffolded.name }} <span class="tag" style="background:#2a2f3a;color:var(--muted)">template · TODOs</span></h3>
+            <textarea class="cfg-json" rows="10" readonly>{{ scaffoldText }}</textarea>
+          </ng-container>
+        </div>
+      </ng-template>
     </div>
   </ng-container>
 
@@ -159,6 +218,7 @@ export class AssuranceComponent implements OnInit {
   scaffolded: Journey | null = null;
   scaffoldText = '';
   matchNote = '';
+  gapSel = new Set<string>();
 
   ngOnInit(): void {
     this.repos = this.store.list();
@@ -240,6 +300,34 @@ export class AssuranceComponent implements OnInit {
     return this.journeys.filter(j => this.isGap(j)).reduce((s, j) => s + (j.weightUsd || 0), 0);
   }
 
+  // ── coverage gaps list + projected uplift (image020 / 028 / 024) ──
+  get coverageGaps(): CoverageGap[] {
+    return this.journeys.filter(j => this.isGap(j)).map(j => ({
+      j,
+      cur: j.alignment === 'unaligned' ? 5 : 0,
+      target: j.criticality === 'high' ? 80 : j.criticality === 'medium' ? 70 : 60,
+      points: j.criticality === 'high' ? 40 : j.criticality === 'medium' ? 25 : 10,
+    }));
+  }
+  gapReason(j: Journey): string {
+    if (j.alignment === 'no-test') { return 'No test exercises this journey — entirely uncovered.'; }
+    return 'A test exists but points at a placeholder / never exercises the journey — false confidence.';
+  }
+  toggleGap(id: string): void { this.gapSel.has(id) ? this.gapSel.delete(id) : this.gapSel.add(id); }
+  /** Projected journey coverage if the selected gaps were scaffolded & wired. */
+  get projectedCoverage(): number {
+    if (!this.journeys.length) { return 0; }
+    return Math.round(100 * (this.covered + this.gapSel.size) / this.journeys.length);
+  }
+  get projectedIndex(): number {
+    const projGaps = this.journeys.length ? Math.round(100 * Math.max(0, this.openGaps - this.gapSel.size) / this.journeys.length) : 0;
+    return Math.round(this.projectedCoverage * this.wCov + (100 - projGaps) * this.wGap + this.acFreshness * this.wMut);
+  }
+  scaffoldAllSelected(): void {
+    const first = this.journeys.find(j => this.gapSel.has(j.id));
+    if (first) { this.scaffold(first); }
+  }
+
   // ── AC tab roll-ups ──
   get alignedCount(): number { return this.journeys.filter(j => j.alignment === 'aligned').length; }
   get partialCount(): number { return this.journeys.filter(j => j.alignment === 'partial').length; }
@@ -278,5 +366,8 @@ test('${j.name}', async ({ page }) => {
 `;
   }
 
+  get selectedSession(): string {
+    return this.repos.find(r => r.repoUrl === this.selectedRepo)?.sessionId || '';
+  }
   shortRepo(url: string): string { return (url || '').replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, ''); }
 }

@@ -108,9 +108,26 @@ export class OptimizeComponent implements OnInit, OnDestroy {
     for (const c of this.visibleCategories) { for (const l of this.catLeaves(c)) { this.selection.add(l.id); } }
   }
   clearSelection(): void { this.selection.clear(); }
+  selectGroup(cat: QualityCategory): void {
+    const ls = this.catLeaves(cat);
+    const all = ls.every(l => this.selection.has(l.id));
+    for (const l of ls) { all ? this.selection.delete(l.id) : this.selection.add(l.id); }
+  }
   get visibleLeafCount(): number {
     return this.visibleCategories.reduce((s, c) => s + this.catLeaves(c).length, 0);
   }
+
+  // ── KPI strip across all governance fixes (image017: Critical / High / Avg conf / Low effort) ──
+  get allLeaves(): QualityItem[] { return this.categories.flatMap(c => this.catLeaves(c)); }
+  conf(l: QualityItem): number { return l.confidence ?? 70; }
+  sev(l: QualityItem): string { const c = this.conf(l); return c >= 90 ? 'critical' : c >= 75 ? 'high' : 'medium'; }
+  get criticalCount(): number { return this.allLeaves.filter(l => this.sev(l) === 'critical').length; }
+  get highCount(): number { return this.allLeaves.filter(l => this.sev(l) === 'high').length; }
+  get avgConfidence(): number {
+    const ls = this.allLeaves; return ls.length ? Math.round(ls.reduce((s, l) => s + this.conf(l), 0) / ls.length) : 0;
+  }
+  get lowEffortCount(): number { return this.allLeaves.filter(l => l.est_effort === 'low').length; }
+  get totalLeaves(): number { return this.allLeaves.length; }
 
   // ── live estimate ──
   private selImpact(cat: QualityCategory): number {

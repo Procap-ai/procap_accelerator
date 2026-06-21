@@ -117,6 +117,10 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
   isActive(status?: string): boolean { return !!status && ACTIVE_STATUSES.includes(status); }
   get analysis(): QualityAnalysis | null { return this.session?.analysis ?? null; }
   get categories(): QualityCategory[] { return this.analysis?.categories ?? []; }
+  /** Score rings on the governance Overview exclude coverage (lives under Business Assurance). */
+  get ringCategories(): QualityCategory[] {
+    return this.categories.filter(c => c.kind !== 'coverage' && c.id !== 'coverage');
+  }
   // Keep the analysis report visible once it exists — not only while status==='analyzed'.
   // Otherwise it vanishes after run_task / open_pr (status task_done | pr_open | failed).
   get isAnalyzed(): boolean {

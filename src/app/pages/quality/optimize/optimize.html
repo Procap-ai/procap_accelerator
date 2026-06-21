@@ -30,13 +30,23 @@
       No analysis available yet. Return to the overview and run an analysis first.</p>
 
     <ng-container *ngIf="isAnalyzed">
+      <!-- KPI strip across all governance fixes (image017) -->
+      <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+        <div class="kpi"><span class="val" [class.warn]="criticalCount > 0" style="color:#f5a3c0">{{ criticalCount }}</span>
+          <span class="lbl">Critical</span></div>
+        <div class="kpi"><span class="val" style="color:#f5c87a">{{ highCount }}</span><span class="lbl">High</span></div>
+        <div class="kpi"><span class="val sky">{{ avgConfidence }}%</span><span class="lbl">Avg confidence</span></div>
+        <div class="kpi"><span class="val good">{{ lowEffortCount }} <span style="font-size:14px;color:var(--muted)">of {{ totalLeaves }}</span></span>
+          <span class="lbl">Low effort</span></div>
+      </div>
+
       <!-- Fix-type filter + bulk controls -->
       <div class="panel" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
         <label class="cfg-label" style="margin:0">Fix type</label>
         <select class="repo-select" [(ngModel)]="fixType" style="min-width:200px">
-          <option *ngFor="let f of fixTypes" [value]="f.id">{{ f.label }}</option>
+          <option *ngFor="let f of fixTypes" [value]="f.id">{{ f.label }}{{ f.id === 'all' ? ' (' + totalLeaves + ')' : '' }}</option>
         </select>
-        <span class="rule-desc" style="text-transform:none;letter-spacing:0">{{ visibleLeafCount }} fixes in view</span>
+        <span class="rule-desc" style="text-transform:none;letter-spacing:0">Showing {{ visibleLeafCount }} of {{ totalLeaves }}</span>
         <span class="spacer" style="flex:1"></span>
         <button class="ghost" (click)="selectAllVisible()">Select all in view</button>
         <button class="ghost" (click)="clearSelection()">Clear</button>
@@ -56,6 +66,8 @@
               <span class="cat-title">{{ c.title }}</span>
               <span class="score-pill" [attr.data-kind]="c.kind">{{ c.score }}/100</span>
               <span class="cat-sub" *ngIf="c.summary">{{ c.summary }}</span>
+              <span class="spacer" style="flex:1"></span>
+              <button class="ghost" style="font-size:11px;padding:3px 10px" (click)="selectGroup(c)">Select group</button>
             </div>
 
             <div class="items">
@@ -66,10 +78,13 @@
                   <span class="caret-spacer" *ngIf="!hasChildren(i)"></span>
                   <div class="item-body" (click)="hasChildren(i) ? toggleExpand(i.id) : toggleNode(i)">
                     <div class="item-title-row">
+                      <span class="sev" *ngIf="!hasChildren(i)" [attr.data-s]="sev(i)">{{ sev(i) }}</span>
                       <span class="item-title">{{ i.title }}</span>
+                      <span class="tag" *ngFor="let t of (i.tags || []).slice(0,2)">{{ t }}</span>
                       <span class="metric-chip" *ngIf="metricChip(i)">{{ metricChip(i) }}</span>
                       <span class="impact" *ngIf="i.impact">+{{ i.impact }}</span>
                       <span class="effort" [attr.data-e]="i.est_effort">{{ i.est_effort }}</span>
+                      <span class="conf" *ngIf="!hasChildren(i)" style="font-size:11px;color:var(--muted)">conf {{ conf(i) }}%</span>
                     </div>
                     <div class="item-desc" *ngIf="i.description">{{ i.description }}</div>
                   </div>

@@ -65,7 +65,7 @@
         <div class="score-cell hero">
           <app-score-ring [current]="overallNow" [projected]="overallNow" label="Overall" [size]="120"></app-score-ring>
         </div>
-        <div class="score-cell" *ngFor="let c of categories; trackBy: trackById">
+        <div class="score-cell" *ngFor="let c of ringCategories; trackBy: trackById">
           <app-score-ring [current]="c.score" [projected]="c.score" [label]="c.title" [size]="92"></app-score-ring>
         </div>
       </div>
