@@ -56,21 +56,21 @@
       <h3>Repositories <span class="est-tag" style="color:var(--muted);background:none;border:none" *ngIf="loading">loading…</span></h3>
       <div class="repo-rows" *ngIf="repos.length; else noRepos">
         <div class="repo-row" *ngFor="let r of repos; let i = index; trackBy: trackByUrl" (click)="open(r)">
-          <span class="score-dot" *ngIf="r.scores"
-                [style.background]="bandColor(r.scores.overall) + '22'"
-                [style.color]="bandColor(r.scores.overall)">{{ r.scores.overall }}</span>
-          <span class="score-dot" *ngIf="!r.scores" style="background:var(--panel-3);color:var(--muted)">··</span>
+          <span class="score-dot" *ngIf="health(r) != null"
+                [style.background]="bandColor(health(r)!) + '22'"
+                [style.color]="bandColor(health(r)!)" title="Baseline health">{{ health(r) }}</span>
+          <span class="score-dot" *ngIf="health(r) == null" style="background:var(--panel-3);color:var(--muted)">··</span>
           <div>
             <div class="rr-name">{{ shortRepo(r.repoUrl) }}</div>
             <div class="rr-stack">{{ r.status }}<span *ngIf="r.contributors"> · {{ r.contributors }} contributors</span></div>
           </div>
           <div class="rr-metrics">
-            <div class="rr-metric" *ngIf="r.tests"><b>{{ r.tests }}</b><span>tests</span></div>
-            <div class="rr-spark" title="30-day health-score trend">
-              <app-spark [data]="trends[r.repoUrl]" [color]="bandColor(r.scores?.overall || 50)"></app-spark>
+            <div class="rr-metric" *ngIf="r.tests != null"><b>{{ r.tests }}</b><span>tests</span></div>
+            <div class="rr-spark" title="30-day health trend">
+              <app-spark [data]="trends[r.repoUrl]" [color]="bandColor(health(r) || 50)"></app-spark>
               <span class="rr-trendlbl">30d</span>
             </div>
-            <div class="rr-metric"><b [style.color]="(r.issues || 0) > 0 ? 'var(--warn)' : 'var(--text)'">{{ r.issues ?? '—' }}</b><span>deviations</span></div>
+            <div class="rr-metric"><b [style.color]="(r.findings || 0) > 0 ? 'var(--warn)' : 'var(--text)'">{{ r.findings ?? r.issues ?? '—' }}</b><span>deviations</span></div>
             <button class="link-x ghost" (click)="remove(r, $event)" title="Remove" style="padding:2px 6px">✕</button>
           </div>
         </div>
@@ -94,11 +94,16 @@
     </div>
 
     <div class="panel">
-      <h3>Rule library</h3>
+      <h3>Rule library <span class="spacer" style="flex:1"></span>
+        <a class="nav-link" routerLink="/quality/config" style="padding:2px 8px;font-size:12px">Manage →</a></h3>
+      <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin:0 0 10px;line-height:1.5">
+        Active scan disciplines applied across the fleet. Edit weights, disable, or add custom rules in
+        <a class="link" routerLink="/quality/config">Configuration → Rule Management</a>.</p>
       <div class="rule-row" *ngFor="let rule of rules">
         <code>{{ rule.code }}</code>
         <span class="rule-desc">{{ rule.desc }}</span>
-        <span class="toggle" [class.on]="rule.on" (click)="toggleRule(rule)"></span>
+        <span class="tag" [style.background]="rule.on ? '#1e3a2a' : '#2a2f3a'"
+              [style.color]="rule.on ? '#7ee0a8' : 'var(--muted)'">{{ rule.on ? 'active' : 'off' }}</span>
       </div>
     </div>
   </div>

@@ -121,11 +121,11 @@ export class QualitySessionComponent implements OnInit, OnDestroy {
   get ringCategories(): QualityCategory[] {
     return this.categories.filter(c => c.kind !== 'coverage' && c.id !== 'coverage');
   }
-  // Keep the analysis report visible once it exists — not only while status==='analyzed'.
-  // Otherwise it vanishes after run_task / open_pr (status task_done | pr_open | failed).
-  get isAnalyzed(): boolean {
-    return !!this.analysis?.categories?.length && !this.isActive(this.session?.status);
-  }
+  // Keep the analysis report visible whenever it exists — including while a job is re-running on
+  // AWS (analyzing / working / opening_pr). The activity strip conveys the running state; the
+  // dashboard must NOT disappear on refresh mid-job. Only the very first analysis (no report yet)
+  // shows the progress feed instead.
+  get isAnalyzed(): boolean { return !!this.analysis?.categories?.length; }
 
   // ── git/repo signals (Repository Health enrichment) ──
   get signals(): QualitySignals | null { return this.analysis?.signals ?? null; }

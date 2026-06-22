@@ -568,3 +568,6 @@ button {
   .item-desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.45; } }
 .gap-footer { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px;
   border-top: 1px solid var(--border); b { font-size: 13px; } }
+
+// lock the fix tree while a job is running on AWS
+.plan-layout.locked .plan-tree { pointer-events: none; opacity: .5; filter: grayscale(.3); }

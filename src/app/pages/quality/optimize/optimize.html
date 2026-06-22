@@ -17,12 +17,14 @@
       <a *ngIf="s.pr_url" class="pr-link" [href]="s.pr_url" target="_blank" rel="noopener">View PR ↗</a>
     </div>
 
-    <!-- activity strip while a job runs (view stays visible) -->
-    <div class="activity-strip" *ngIf="isActive(s.status)">
+    <!-- activity strip while a job runs (view stays visible, actions locked) -->
+    <div class="activity-strip" *ngIf="running">
       <span class="dot pulse"></span>
-      <span class="as-text"><b>{{ s.status === 'working' ? 'Implementing selected fixes'
+      <span class="as-text"><b>{{ launching && !isActive(s.status) ? 'Sending to AWS'
+          : s.status === 'working' ? 'Implementing selected fixes on AWS'
           : s.status === 'opening_pr' ? 'Opening pull request' : 'Working' }}…</b>
-        <span class="as-sub" *ngIf="s.progress?.length">{{ progressLine(s.progress[s.progress.length - 1]) }}</span></span>
+        <span class="as-sub" *ngIf="s.progress?.length">{{ progressLine(s.progress[s.progress.length - 1]) }}</span>
+        <span class="as-sub" *ngIf="!s.progress?.length">This runs on AWS and can take a minute — actions are paused until it finishes.</span></span>
       <span class="as-live">live</span>
     </div>
 
@@ -52,7 +54,7 @@
         <button class="ghost" (click)="clearSelection()">Clear</button>
       </div>
 
-      <div class="plan-layout">
+      <div class="plan-layout" [class.locked]="running">
         <div class="plan-tree">
           <h3 class="section-title">Fix suggestions <span class="rule-desc" style="text-transform:none;letter-spacing:0">act one-by-one or in bulk</span></h3>
 
@@ -113,8 +115,10 @@
         <!-- sticky Projected Impact -->
         <aside class="estimate">
           <div class="estimate-card pi-card">
-            <div class="pi-head"><span class="pi-ico">∿</span> Projected Impact</div>
-            <p class="pi-sub">Actual with Meridian vs projected without — before <span class="arrow">→</span> after</p>
+            <div class="pi-head"><span class="pi-ico">∿</span> Projected Impact
+              <span class="tag" style="background:#3a2f1a;color:#f5c87a;margin-left:6px">estimate</span></div>
+            <p class="pi-sub">Modelled before <span class="arrow">→</span> after for the selected fixes.
+              Re-analysis re-scores the current code and may surface new issues, so the actual score can differ.</p>
 
             <div class="pi-block">
               <div class="pi-score-row">
@@ -147,10 +151,11 @@
             </div>
 
             <div class="est-count">✓ {{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected</div>
-            <button class="primary block" [disabled]="!selectedCount || launching" (click)="implement()">
-              {{ launching ? 'Starting…' : 'Implement selected →' }}
+            <button class="primary block" [disabled]="!selectedCount || running" (click)="implement()">
+              {{ running ? 'Running on AWS…' : 'Implement selected →' }}
             </button>
-            <p class="est-hint">Bundled into one branch &amp; pull request.</p>
+            <p class="est-hint" *ngIf="!running">Bundled into one branch &amp; pull request.</p>
+            <p class="est-hint" *ngIf="running" style="color:#7dd3fc">Job in progress — this can take a minute. You can leave this page; it keeps running.</p>
           </div>
         </aside>
       </div>
@@ -165,10 +170,10 @@
         <p class="verify" *ngIf="t.verification"><strong>Verified:</strong> {{ t.verification }}</p>
 
         <div class="pr" *ngIf="!s.pr_url">
-          <button class="primary" (click)="toggleTokenInput()" *ngIf="!showTokenInput">Open Pull Request</button>
+          <button class="primary" (click)="toggleTokenInput()" *ngIf="!showTokenInput" [disabled]="running">Open Pull Request</button>
           <div class="token-row" *ngIf="showTokenInput">
             <input type="password" [(ngModel)]="githubToken" placeholder="GitHub PAT (repo + workflow scope)" autocomplete="off" />
-            <button class="primary" (click)="submitPr()">Create PR</button>
+            <button class="primary" (click)="submitPr()" [disabled]="running">Create PR</button>
             <button class="ghost" (click)="toggleTokenInput()">Cancel</button>
           </div>
           <p class="hint">Use a token with <code>repo</code> + <code>workflow</code> scopes. Sent once to open the PR and never stored on our servers.</p>

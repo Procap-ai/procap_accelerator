@@ -236,7 +236,9 @@ export class AssuranceComponent implements OnInit {
       },
       error: () => { /* keep local */ },
     });
-    if (this.route.snapshot.queryParamMap.get('tab') === 'ac') { this.tab = 'ac'; }
+    // React to ?tab=ac changes (the sidebar "AC criteria alignment" link only changes the query
+    // param — without subscribing, clicking it while already on this page did nothing).
+    this.route.queryParamMap.subscribe(q => { this.tab = q.get('tab') === 'ac' ? 'ac' : 'coverage'; });
   }
 
   // ── repo selector: re-evaluate journeys against the selected repo's REAL test files ──

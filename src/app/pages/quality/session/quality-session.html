@@ -17,8 +17,9 @@
       <div style="display:flex;gap:10px;align-items:center">
         <a *ngIf="isAnalyzed" class="ghost-link" [routerLink]="['/quality/genome', s.session_id]">Business view →</a>
         <a *ngIf="s.pr_url" class="pr-link" [href]="s.pr_url" target="_blank" rel="noopener">View PR ↗</a>
-        <a *ngIf="isAnalyzed" class="primary" [routerLink]="['/quality/session', s.session_id, 'optimize']"
+        <a *ngIf="isAnalyzed && !isActive(s.status)" class="primary" [routerLink]="['/quality/session', s.session_id, 'optimize']"
            style="padding:7px 14px;border-radius:8px;text-decoration:none">Take action &amp; Optimize →</a>
+        <span *ngIf="isAnalyzed && isActive(s.status)" class="badge" style="opacity:.6">Actions paused — job running</span>
       </div>
     </div>
 
@@ -30,7 +31,7 @@
         <span *ngIf="latestCommitSubject">Latest: “{{ latestCommitSubject }}”.</span>
         Re-run the analysis to refresh status &amp; findings.
       </div>
-      <button class="primary" (click)="reanalyze()">Re-analyze →</button>
+      <button class="primary" (click)="reanalyze()" [disabled]="isActive(s.status)">Re-analyze →</button>
     </div>
 
     <!-- non-blocking activity strip: a job is running, but the overview stays visible -->
@@ -214,8 +215,9 @@
           <p class="rule-desc" style="text-transform:none;letter-spacing:0;margin:0">
             Review fix suggestions by category, select what to implement, and open a pull request.</p>
         </div>
-        <a class="primary" [routerLink]="['/quality/session', s.session_id, 'optimize']"
+        <a *ngIf="!isActive(s.status)" class="primary" [routerLink]="['/quality/session', s.session_id, 'optimize']"
            style="padding:10px 18px;border-radius:8px;text-decoration:none">Take action &amp; Optimize →</a>
+        <span *ngIf="isActive(s.status)" class="rule-desc" style="text-transform:none;letter-spacing:0">Available once the running job finishes.</span>
       </div>
     </ng-container>
 

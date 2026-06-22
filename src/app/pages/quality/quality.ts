@@ -72,7 +72,7 @@ export class QualityComponent implements OnInit {
         repoUrl: url, sessionId: r.session_id, status: 'analyzed',
         scores: { overall: r.overall, coverage: r.coverage, code_quality: 0, ci_tooling: 0 },
         coverage: r.coverage, issues: r.issues, contributors: r.contributors, savings: r.savings_est,
-        tests: r.tests,
+        tests: r.tests, scanScore: r.scan_score ?? null, findings: r.scan_findings ?? r.issues,
       });
     }
     this.repos = this.store.list();
@@ -123,6 +123,9 @@ export class QualityComponent implements OnInit {
     const a = this.analyzed; return a.length ? Math.round(a.reduce((s, r) => s + f(r), 0) / a.length) : 0;
   }
 
+  /** Headline health per repo = deterministic scan baseline health, falling back to the model score.
+   *  Using one number everywhere keeps the row consistent with the "Baseline health" KPI. */
+  health(r: SavedRepo): number | null { return r.scanScore ?? r.scores?.overall ?? null; }
   band(v: number): string { return v >= 75 ? 'good' : v >= 50 ? 'warn' : 'bad'; }
   bandColor(v: number): string { return v >= 75 ? '#22c55e' : v >= 50 ? '#f59e0b' : '#ef4444'; }
   avatarColor(name: string): string {
@@ -143,7 +146,7 @@ export class QualityComponent implements OnInit {
 
   /** 30-day health trajectory ending at the repo's current score (deterministic, not random). */
   private computeTrend(r: SavedRepo): number[] {
-    const end = r.scores?.overall ?? 50;
+    const end = r.scanScore ?? r.scores?.overall ?? 50;
     const seed = (r.repoUrl || '').length;
     return Array.from({ length: 8 }, (_, i) => {
       const drift = (8 - i) * 2.2;                         // older points sit a bit higher/lower

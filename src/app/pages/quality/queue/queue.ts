@@ -41,7 +41,7 @@ interface PrRow {
     <div class="queue-row" *ngFor="let r of rows">
       <div>
         <div class="q-head">
-          <span class="sev" [ngClass]="badgeClass(r.state)">{{ r.state }}</span>
+          <span class="sev" [ngClass]="badgeClass(r.state)">{{ r.state === 'unknown' ? 'raised' : r.state }}</span>
           <span class="q-title">{{ r.title }}</span>
           <span class="tag">#{{ r.number }}</span>
         </div>
@@ -67,8 +67,19 @@ export class QueueComponent implements OnInit {
   loading = true;
 
   ngOnInit(): void {
-    const repos = this.store.list().filter(r => r.sessionId);
-    if (!repos.length) { this.loading = false; return; }
+    // Discover sessions from BOTH the browser's tracked repos and the server fleet, so a raised PR
+    // shows even if this browser never tracked that repo locally.
+    this.svc.getFleet().pipe(catchError(() => of({ repos: [], aggregate: {} as never }))).subscribe(fleet => {
+      const byId = new Map<string, string>();
+      for (const r of this.store.list()) { if (r.sessionId) { byId.set(r.sessionId, r.repoUrl); } }
+      for (const r of fleet.repos || []) { if (r.session_id) { byId.set(r.session_id, `https://github.com/${r.repo}`); } }
+      const repos = [...byId].map(([sessionId, repoUrl]) => ({ sessionId, repoUrl }));
+      if (!repos.length) { this.loading = false; return; }
+      this.loadSessions(repos);
+    });
+  }
+
+  private loadSessions(repos: { sessionId: string; repoUrl: string }[]): void {
     forkJoin(repos.map(r => this.svc.getSession(r.sessionId).pipe(
       catchError(() => of(null)),
       map(s => ({ s, repo: r.repoUrl })),

@@ -68,6 +68,8 @@ export class OptimizeComponent implements OnInit, OnDestroy {
   private stopPolling(): void { this.poll?.unsubscribe(); this.poll = undefined; }
 
   isActive(status?: string): boolean { return !!status && ACTIVE_STATUSES.includes(status); }
+  /** True while a job is in flight (locally launched or running on AWS) — gates all actions. */
+  get running(): boolean { return this.launching || this.isActive(this.session?.status); }
   get analysis(): QualityAnalysis | null { return this.session?.analysis ?? null; }
   /** Governance fix planner excludes coverage categories (those live under Business Assurance). */
   get categories(): QualityCategory[] {

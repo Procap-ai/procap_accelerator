@@ -27,15 +27,18 @@ interface Ledger { ts: number; who: string; what: string; repo: string; }
   </div>
 
   <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
-    <div class="kpi"><span class="val good">{{ adherence }}</span><span class="lbl">Adherence index</span></div>
+    <div class="kpi"><span class="val good">{{ adherence }}<span style="font-size:15px;color:var(--muted)">/100</span></span>
+      <span class="lbl">Adherence index
+        <i class="info">i<span class="tip">Mean of the per-discipline adherence scores (0–100, higher = more adherent to the standard). A discipline score = how well the suite follows that rule group.</span></i></span></div>
     <div class="kpi"><span class="val sky">{{ disciplines.length }}</span><span class="lbl">Disciplines tracked</span></div>
     <div class="kpi"><span class="val">{{ delta >= 0 ? '+' : '' }}{{ delta }}<span class="est-tag">est</span></span>
-      <span class="lbl">Trend vs first snapshot</span></div>
+      <span class="lbl">Trend vs first snapshot
+        <i class="info">i<span class="tip">Change in the overall adherence index since the first recorded snapshot for these repos.</span></i></span></div>
   </div>
 
   <div class="fleet-grid">
     <div class="panel">
-      <h3>Adherence by discipline</h3>
+      <h3>Adherence by discipline <span class="rule-desc" style="text-transform:none;letter-spacing:0">score 0–100 · weakest first</span></h3>
       <div class="disc-row" *ngFor="let d of disciplines">
         <span class="disc-name">{{ d.name }}</span>
         <span class="disc-track"><span class="disc-fill" [style.width.%]="d.value"></span></span>
