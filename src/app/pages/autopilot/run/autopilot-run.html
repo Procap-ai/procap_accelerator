@@ -1,0 +1,126 @@
+<div class="run-wrap">
+  <a class="back" routerLink="/autopilot">← Targets</a>
+
+  @if (loading) {
+    <p class="muted">Loading run…</p>
+  } @else if (errorMessage) {
+    <p class="err">{{ errorMessage }}</p>
+  } @else if (run) {
+    <header class="r-head">
+      <div>
+        <div class="eyebrow">{{ run.kind === 'repo' ? 'Repo run' : 'Website run' }}</div>
+        <h1>{{ run.name }}</h1>
+        <a class="url" [href]="run.url" target="_blank" rel="noopener">{{ run.url }}</a>
+      </div>
+      <div class="status-box" [class.live]="isRunning" [class.ok]="isDone" [class.bad]="isFailed">
+        @if (isRunning) { <span class="dot"></span> }
+        {{ run.status }}
+      </div>
+    </header>
+
+    @if (isFailed && run.error) { <div class="banner bad">⚠ {{ run.error }}</div> }
+
+    <!-- pipeline -->
+    <div class="pipe">
+      @for (s of stages; track s.id) {
+        <div class="stage" [class]="stageState(s.id)">
+          <span class="ic">{{ s.icon }}</span>
+          <span class="lbl">{{ s.label }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- summary tiles -->
+    @if (run.summary) {
+      <div class="tiles">
+        <div class="tile"><div class="n">{{ run.summary.total }}</div><div class="l">Tests</div></div>
+        <div class="tile ok"><div class="n">{{ run.summary.passed }}</div><div class="l">Passed</div></div>
+        <div class="tile bad"><div class="n">{{ run.summary.failed }}</div><div class="l">Failed</div></div>
+        <div class="tile warn"><div class="n">{{ bugs.length }}</div><div class="l">Bugs</div></div>
+      </div>
+    }
+
+    <div class="cols">
+      <!-- left: live log -->
+      <section class="card">
+        <h2>Live run log @if (isRunning) { <span class="tag-live">streaming</span> }</h2>
+        <div class="log">
+          @for (e of log; track $index) {
+            <div class="row {{ logClass(e) }}">
+              <span class="t">{{ e.title || e.msg }}</span>
+            </div>
+          }
+          @if (!log.length) { <p class="muted">Waiting for the worker to start…</p> }
+        </div>
+      </section>
+
+      <!-- right: filmstrip -->
+      <section class="card">
+        <h2>Filmstrip @if (filmstrip.length) { <span class="count">{{ filmstrip.length }}</span> }</h2>
+        @if (filmstrip.length) {
+          <div class="strip">
+            @for (e of filmstrip; track $index) {
+              <figure>
+                <img [src]="captureUrl(e.capture)" [alt]="e.title || 'frame'" loading="lazy" />
+                <figcaption [class.fail]="e.type === 'fail'">{{ e.title }}</figcaption>
+              </figure>
+            }
+          </div>
+        } @else {
+          <p class="muted">Screenshots appear here as tests run.</p>
+        }
+      </section>
+    </div>
+
+    <!-- bugs -->
+    @if (bugs.length) {
+      <section class="block">
+        <h2>Bugs found <span class="count bad">{{ bugs.length }}</span></h2>
+        <div class="bugs">
+          @for (b of bugs; track b.id) {
+            <div class="bug">
+              <div class="b-top">
+                <span class="sev {{ sevClass(b.severity) }}">{{ b.severity || 'med' }}</span>
+                <span class="b-title">{{ b.title }}</span>
+                @if (b.confidence != null) { <span class="conf">{{ b.confidence }}% sure</span> }
+              </div>
+              <div class="b-body">
+                <div class="b-text">
+                  @if (b.test) { <p><strong>Test:</strong> {{ b.test }}</p> }
+                  @if (b.expected) { <p><strong>Expected:</strong> {{ b.expected }}</p> }
+                  @if (b.actual) { <p><strong>Actual:</strong> {{ b.actual }}</p> }
+                  @if (b.rationale) { <p class="rationale">{{ b.rationale }}</p> }
+                </div>
+                @if (b.evidence_capture) {
+                  <a class="b-shot" [href]="captureUrl(b.evidence_capture)" target="_blank" rel="noopener">
+                    <img [src]="captureUrl(b.evidence_capture)" alt="evidence" loading="lazy" />
+                  </a>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    } @else if (isDone) {
+      <div class="banner ok">✓ No bugs triaged from this run.</div>
+    }
+
+    <!-- artifacts -->
+    @if (run.artifacts && (run.artifacts.videos?.length || run.artifacts.traces?.length)) {
+      <section class="block">
+        <h2>Artifacts</h2>
+        <div class="arts">
+          @if (run.artifacts.report) {
+            <a class="art" [href]="artifactUrl(run.artifacts.report)" target="_blank" rel="noopener">📄 report.json</a>
+          }
+          @for (v of run.artifacts.videos || []; track v) {
+            <a class="art" [href]="artifactUrl(v)" target="_blank" rel="noopener">🎬 {{ v }}</a>
+          }
+          @for (t of run.artifacts.traces || []; track t) {
+            <a class="art" [href]="artifactUrl(t)" target="_blank" rel="noopener">🧵 {{ t }}</a>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>

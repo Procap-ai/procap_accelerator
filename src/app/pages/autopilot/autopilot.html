@@ -1,0 +1,115 @@
+<div class="ap-wrap">
+  <header class="ap-head">
+    <div>
+      <div class="eyebrow">Procap · Autopilot</div>
+      <h1>Autonomous test runs</h1>
+      <p class="sub">Add a repo or a website, then run a cloud test on demand — explore, generate, execute, and surface bugs.</p>
+    </div>
+    <button class="btn primary" (click)="toggleForm()">{{ showForm ? 'Close' : '+ Add target' }}</button>
+  </header>
+
+  <!-- ── add-target form ── -->
+  @if (showForm) {
+    <section class="card form">
+      <div class="seg">
+        <button [class.active]="kind === 'website'" (click)="setKind('website')">🌐 Website</button>
+        <button [class.active]="kind === 'repo'" (click)="setKind('repo')">📦 GitHub repo</button>
+      </div>
+
+      <label class="fld">
+        <span>Name <em>(optional)</em></span>
+        <input [(ngModel)]="name" placeholder="e.g. Loka AI staging" />
+      </label>
+
+      @if (kind === 'website') {
+        <label class="fld">
+          <span>Website URL</span>
+          <input [(ngModel)]="siteUrl" placeholder="https://staging.example.com" />
+        </label>
+        <label class="check">
+          <input type="checkbox" [(ngModel)]="withCreds" />
+          <span>This site needs a login</span>
+        </label>
+        @if (withCreds) {
+          <div class="creds">
+            <label class="fld"><span>Username / email</span><input [(ngModel)]="username" autocomplete="off" /></label>
+            <label class="fld"><span>Password</span><input type="password" [(ngModel)]="password" autocomplete="new-password" /></label>
+            <label class="fld"><span>Login URL <em>(optional)</em></span><input [(ngModel)]="loginUrl" placeholder="https://example.com/login" /></label>
+            <p class="hint">🔒 Stored encrypted server-side (SSM SecureString) — never shown again, never in the browser.</p>
+          </div>
+        }
+      } @else {
+        <label class="fld">
+          <span>GitHub repo URL</span>
+          <input [(ngModel)]="repoUrl" placeholder="https://github.com/owner/repo" />
+        </label>
+        <label class="fld">
+          <span>Access token <em>(only for private repos)</em></span>
+          <input type="password" [(ngModel)]="githubToken" autocomplete="new-password" placeholder="ghp_…" />
+        </label>
+      }
+
+      @if (formError) { <p class="err">{{ formError }}</p> }
+      <div class="actions">
+        <button class="btn" (click)="resetForm()">Cancel</button>
+        <button class="btn primary" [disabled]="submitting" (click)="addTarget()">{{ submitting ? 'Adding…' : 'Add target' }}</button>
+      </div>
+    </section>
+  }
+
+  <!-- ── targets ── -->
+  <section class="block">
+    <h2>Targets</h2>
+    @if (loading) {
+      <p class="muted">Loading…</p>
+    } @else if (targets.length === 0) {
+      <div class="empty">No targets yet. Add a website or repo to run your first cloud test.</div>
+    } @else {
+      <div class="grid">
+        @for (t of targets; track t.target_id) {
+          <div class="card target">
+            <div class="t-top">
+              <span class="kind" [class.repo]="t.kind === 'repo'">{{ t.kind === 'repo' ? '📦 Repo' : '🌐 Website' }}</span>
+              @if (t.has_creds) { <span class="lock" title="Has stored credentials">🔒</span> }
+              @if (t.last_run_status) { <span class="pill" [class]="statusClass(t.last_run_status)">{{ t.last_run_status }}</span> }
+            </div>
+            <div class="t-name">{{ t.name }}</div>
+            <div class="t-url">{{ t.site_url || t.repo_url }}</div>
+            <div class="t-actions">
+              <button class="btn primary sm" [disabled]="runningTargetId === t.target_id" (click)="runNow(t)">
+                {{ runningTargetId === t.target_id ? 'Starting…' : '▶ Run now' }}
+              </button>
+              @if (t.last_run_id) {
+                <a class="btn sm" [routerLink]="['/autopilot/run', t.last_run_id]">Last run</a>
+              }
+              <button class="btn ghost sm" (click)="remove(t)">Delete</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- ── recent runs ── -->
+  @if (runs.length) {
+    <section class="block">
+      <h2>Recent runs</h2>
+      <div class="runs">
+        @for (r of runs; track r.run_id) {
+          <a class="run-row" [routerLink]="['/autopilot/run', r.run_id]">
+            <span class="pill" [class]="statusClass(r.status)">{{ r.status }}</span>
+            <span class="r-name">{{ r.name }}</span>
+            @if (r.summary) {
+              <span class="r-sum">
+                <em class="ok">{{ r.summary.passed }}✓</em>
+                <em class="bad">{{ r.summary.failed }}✗</em>
+                / {{ r.summary.total }}
+              </span>
+            }
+            <span class="r-ago">{{ ago(r.created_at) }}</span>
+          </a>
+        }
+      </div>
+    </section>
+  }
+</div>
