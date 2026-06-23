@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Subscription, timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
-import { AutopilotService, AutopilotRun, ProgressEntry, Bug } from '../../../services/autopilot.service';
+import { AutopilotService, AutopilotRun, ProgressEntry, Bug, TestResult } from '../../../services/autopilot.service';
 
 interface Stage { id: string; label: string; icon: string; }
 
@@ -82,6 +82,14 @@ export class AutopilotRunComponent implements OnInit, OnDestroy {
     return (this.run?.progress ?? []).filter(e => (e.title && e.title.trim()) || (e.msg && e.msg.trim()));
   }
   get bugs(): Bug[] { return this.run?.bugs ?? []; }
+  get tests(): TestResult[] { return this.run?.tests ?? []; }
+
+  testClass(s: string): string {
+    if (s === 'passed') return 'pass';
+    if (['failed', 'timedOut', 'interrupted'].includes(s)) return 'fail';
+    if (s === 'flaky') return 'flaky';
+    return 'skip';
+  }
 
   logClass(e: ProgressEntry): string {
     switch (e.type) {

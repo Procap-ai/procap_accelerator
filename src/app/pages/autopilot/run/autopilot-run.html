@@ -72,6 +72,27 @@
       </section>
     </div>
 
+    <!-- tests -->
+    @if (tests.length) {
+      <section class="block">
+        <h2>Tests <span class="count">{{ tests.length }}</span></h2>
+        <ul class="testlist">
+          @for (t of tests; track $index) {
+            <li>
+              <span class="t-status {{ testClass(t.status) }}">{{ t.status }}</span>
+              <div class="t-info">
+                <div class="t-title">{{ t.title }}</div>
+                @if (t.description) { <div class="t-desc">{{ t.description }}</div> }
+                @if (t.error) { <div class="t-err">{{ t.error }}</div> }
+              </div>
+              @if (t.duration_ms) { <span class="t-dur">{{ (t.duration_ms / 1000).toFixed(1) }}s</span> }
+            </li>
+          }
+        </ul>
+        <p class="hint">Manage and delete tests from the <a [routerLink]="['/autopilot/target', run.target_id]">target page</a>.</p>
+      </section>
+    }
+
     <!-- bugs -->
     @if (bugs.length) {
       <section class="block">

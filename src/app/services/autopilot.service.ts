@@ -3,6 +3,15 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 export type TargetKind = 'repo' | 'website';
+export type CoverageLevel = 'minimal' | 'critical' | 'standard' | 'deep';
+
+export interface TargetTest {
+  id: string;
+  title: string;
+  description?: string;
+  file?: string;
+  enabled: boolean;
+}
 
 export interface AutopilotTarget {
   target_id: string;
@@ -17,6 +26,9 @@ export interface AutopilotTarget {
   stack_hint?: string;
   private?: boolean;
   has_creds: boolean;
+  coverage?: CoverageLevel;
+  suite_ready?: boolean;
+  tests?: TargetTest[];
   last_run_id?: string;
   last_run_status?: string;
   created_at: number;
@@ -33,7 +45,9 @@ export interface ProgressEntry {
 }
 
 export interface TestResult {
+  id?: string;
   title: string;
+  description?: string;
   file?: string;
   status: string;    // passed | failed | timedOut | skipped | ...
   duration_ms?: number;
@@ -98,6 +112,7 @@ export interface ValidateResult {
 export interface CreateTargetPayload {
   kind: TargetKind;
   name?: string;
+  coverage?: CoverageLevel;
   repo_url?: string;
   site_url?: string;
   github_token?: string;
@@ -128,6 +143,19 @@ export class AutopilotService {
 
   deleteTarget(id: string): Observable<{ deleted: boolean }> {
     return this.http.delete<{ deleted: boolean }>(`${this.apiBase}/autopilot/targets/${id}`);
+  }
+
+  updateTarget(id: string, patch: { coverage?: CoverageLevel; name?: string }): Observable<AutopilotTarget> {
+    return this.http.patch<AutopilotTarget>(`${this.apiBase}/autopilot/targets/${id}`, patch);
+  }
+
+  deleteTest(targetId: string, testId: string): Observable<{ disabled_tests: string[] }> {
+    return this.http.delete<{ disabled_tests: string[] }>(
+      `${this.apiBase}/autopilot/targets/${targetId}/tests/${testId}`);
+  }
+
+  regenerate(targetId: string): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(`${this.apiBase}/autopilot/targets/${targetId}/regenerate`, {});
   }
 
   createRun(targetId: string): Observable<{ run_id: string; status: string }> {

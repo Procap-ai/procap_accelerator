@@ -26,6 +26,16 @@
           <span>Website URL</span>
           <input [(ngModel)]="siteUrl" placeholder="https://staging.example.com" />
         </label>
+        <div class="fld">
+          <span>Coverage <em>(start minimal — fewer, deeper tests)</em></span>
+          <div class="cov-seg">
+            <button type="button" [class.active]="coverage === 'minimal'" (click)="coverage = 'minimal'">Minimal</button>
+            <button type="button" [class.active]="coverage === 'critical'" (click)="coverage = 'critical'">Critical</button>
+            <button type="button" [class.active]="coverage === 'standard'" (click)="coverage = 'standard'">Standard</button>
+            <button type="button" [class.active]="coverage === 'deep'" (click)="coverage = 'deep'">Deep</button>
+          </div>
+          <p class="hint">Minimal = one test that checks every page is reachable. You can change this and curate tests later.</p>
+        </div>
         <label class="check">
           <input type="checkbox" [(ngModel)]="withCreds" />
           <span>This site needs a login</span>
@@ -71,17 +81,17 @@
             <div class="t-top">
               <span class="kind" [class.repo]="t.kind === 'repo'">{{ t.kind === 'repo' ? '📦 Repo' : '🌐 Website' }}</span>
               @if (t.has_creds) { <span class="lock" title="Has stored credentials">🔒</span> }
+              @if (t.kind === 'website') { <span class="cov-chip">{{ t.coverage || 'minimal' }}</span> }
               @if (t.last_run_status) { <span class="pill" [class]="statusClass(t.last_run_status)">{{ t.last_run_status }}</span> }
             </div>
-            <div class="t-name">{{ t.name }}</div>
+            <a class="t-name" [routerLink]="['/autopilot/target', t.target_id]">{{ t.name }}</a>
             <div class="t-url">{{ t.site_url || t.repo_url }}</div>
+            @if (t.tests?.length) { <div class="t-meta">{{ t.tests?.length }} test(s) in suite</div> }
             <div class="t-actions">
               <button class="btn primary sm" [disabled]="runningTargetId === t.target_id" (click)="runNow(t)">
                 {{ runningTargetId === t.target_id ? 'Starting…' : '▶ Run now' }}
               </button>
-              @if (t.last_run_id) {
-                <a class="btn sm" [routerLink]="['/autopilot/run', t.last_run_id]">Last run</a>
-              }
+              <a class="btn sm" [routerLink]="['/autopilot/target', t.target_id]">Manage</a>
               <button class="btn ghost sm" (click)="remove(t)">Delete</button>
             </div>
           </div>

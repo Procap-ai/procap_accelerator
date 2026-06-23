@@ -68,8 +68,15 @@ h1 { font-size: 34px; margin: 12px 0 6px; letter-spacing: -.02em; }
 .kind { font: 600 12px 'JetBrains Mono', monospace; color: var(--violet); background: rgba(106,77,255,.08); padding: 3px 9px; border-radius: 7px; }
 .kind.repo { color: var(--accent); background: rgba(10,157,106,.08); }
 .lock { font-size: 13px; }
-.t-name { font-weight: 700; font-size: 16px; }
-.t-url { color: var(--faint); font-size: 13px; word-break: break-all; margin: 2px 0 14px; }
+.t-name { font-weight: 700; font-size: 16px; color: var(--ink); text-decoration: none; display: inline-block; }
+.t-name:hover { color: var(--accent); }
+.t-url { color: var(--faint); font-size: 13px; word-break: break-all; margin: 2px 0 8px; }
+.t-meta { font: 12px 'JetBrains Mono', monospace; color: var(--muted); margin-bottom: 12px; }
+.cov-chip { font: 600 11px 'JetBrains Mono', monospace; text-transform: capitalize; color: var(--violet); background: rgba(106,77,255,.08); padding: 3px 8px; border-radius: 7px; }
+
+.cov-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.cov-seg button { border: 1px solid var(--line); background: #fff; color: var(--muted); border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.cov-seg button.active { border-color: var(--accent); color: var(--accent); background: rgba(10,157,106,.06); }
 .t-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .pill { font: 600 11px 'JetBrains Mono', monospace; padding: 3px 9px; border-radius: 20px; text-transform: capitalize; }

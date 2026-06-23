@@ -79,6 +79,22 @@ h1 { font-size: 28px; margin: 10px 0 4px; letter-spacing: -.02em; }
 .strip figcaption { font-size: 11px; padding: 6px 8px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .strip figcaption.fail { color: var(--rose); }
 
+/* test list */
+.testlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.testlist li { display: flex; align-items: flex-start; gap: 12px; background: #fff; border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; }
+.t-status { font: 600 11px 'JetBrains Mono', monospace; padding: 3px 9px; border-radius: 6px; text-transform: capitalize; flex: 0 0 auto; }
+.t-status.pass { color: var(--accent); background: rgba(10,157,106,.1); }
+.t-status.fail { color: var(--rose); background: rgba(216,69,63,.1); }
+.t-status.flaky { color: var(--amber); background: rgba(176,124,10,.1); }
+.t-status.skip { color: var(--muted); background: #eef2f8; }
+.t-info { flex: 1; }
+.t-info .t-title { font-weight: 600; }
+.t-info .t-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.t-info .t-err { font: 11px/1.4 'JetBrains Mono', monospace; color: var(--rose); margin-top: 4px; white-space: pre-wrap; max-height: 80px; overflow: hidden; }
+.t-dur { font: 12px 'JetBrains Mono', monospace; color: var(--faint); }
+.hint { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.hint a { color: var(--accent); }
+
 /* bugs */
 .block { margin-top: 26px; }
 .block h2 { font-size: 17px; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }

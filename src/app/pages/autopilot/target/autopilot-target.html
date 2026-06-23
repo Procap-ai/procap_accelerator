@@ -1,0 +1,80 @@
+<div class="t-wrap">
+  <a class="back" routerLink="/autopilot">← Targets</a>
+
+  @if (loading) {
+    <p class="muted">Loading…</p>
+  } @else if (target) {
+    <header class="t-head">
+      <div>
+        <span class="kind" [class.repo]="target.kind === 'repo'">{{ target.kind === 'repo' ? '📦 Repo' : '🌐 Website' }}</span>
+        @if (target.has_creds) { <span class="lock" title="Has stored credentials">🔒</span> }
+        <h1>{{ target.name }}</h1>
+        <a class="url" [href]="target.site_url || target.repo_url" target="_blank" rel="noopener">{{ target.site_url || target.repo_url }}</a>
+      </div>
+      <button class="btn primary" [disabled]="busy" (click)="runNow()">▶ Run now</button>
+    </header>
+
+    <!-- coverage control (websites) -->
+    @if (target.kind === 'website') {
+      <section class="card">
+        <h2>Coverage</h2>
+        <p class="muted sm">How much to generate. Default is minimal — fewer, deeper tests. Changing this regenerates on the next run.</p>
+        <div class="cov">
+          @for (o of coverageOpts; track o.id) {
+            <button class="cov-opt" [class.active]="coverage === o.id" [disabled]="busy" (click)="setCoverage(o.id)">
+              <span class="c-label">{{ o.label }}</span>
+              <span class="c-blurb">{{ o.blurb }}</span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- tests list -->
+    <section class="card">
+      <div class="h-row">
+        <h2>Tests <span class="count">{{ enabledCount }} active</span></h2>
+        <button class="btn sm" [disabled]="busy" (click)="regenerate()">↻ Regenerate</button>
+      </div>
+
+      @if (!target.suite_ready && !tests.length) {
+        <div class="empty">No tests yet — run once and the suite is generated, then you can curate it here.</div>
+      } @else if (!tests.length) {
+        <div class="empty">Suite will be generated on the next run.</div>
+      } @else {
+        <ul class="tests">
+          @for (t of tests; track t.id) {
+            <li [class.off]="!t.enabled">
+              <div class="t-main">
+                <div class="t-title">{{ t.title }} @if (!t.enabled) { <span class="muted-tag">disabled</span> }</div>
+                @if (t.description) { <div class="t-desc">{{ t.description }}</div> }
+                @if (t.file) { <div class="t-file">{{ t.file }}</div> }
+              </div>
+              @if (t.enabled) {
+                <button class="btn ghost sm" (click)="removeTest(t)">Delete</button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- runs -->
+    @if (runs.length) {
+      <section class="card">
+        <h2>Runs</h2>
+        <div class="runs">
+          @for (r of runs; track r.run_id) {
+            <a class="run-row" [routerLink]="['/autopilot/run', r.run_id]">
+              <span class="pill" [class]="statusClass(r.status)">{{ r.status }}</span>
+              @if (r.summary) {
+                <span class="r-sum"><em class="ok">{{ r.summary.passed }}✓</em><em class="bad">{{ r.summary.failed }}✗</em>/ {{ r.summary.total }}</span>
+              }
+              <span class="r-ago">{{ ago(r.created_at) }}</span>
+            </a>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>

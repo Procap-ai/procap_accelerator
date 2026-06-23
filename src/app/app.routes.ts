@@ -18,6 +18,7 @@ import { GenomeComponent } from './pages/quality/genome/genome';
 import { ConfigurationComponent } from './pages/quality/config/configuration';
 import { AssuranceComponent } from './pages/quality/assurance/assurance';
 import { AutopilotComponent } from './pages/autopilot/autopilot';
+import { AutopilotTargetComponent } from './pages/autopilot/target/autopilot-target';
 import { AutopilotRunComponent } from './pages/autopilot/run/autopilot-run';
 
 export const routes: Routes = [
@@ -43,6 +44,7 @@ export const routes: Routes = [
   },
   // Autopilot — on-demand cloud test runs (intentionally NOT linked from the home page)
   { path: 'autopilot', component: AutopilotComponent },
+  { path: 'autopilot/target/:id', component: AutopilotTargetComponent },
   { path: 'autopilot/run/:id', component: AutopilotRunComponent },
   // Sample projects (not linked from the home page)
   { path: 'samples/code-lab', component: CodeLabComponent },

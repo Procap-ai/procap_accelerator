@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
 import {
-  AutopilotService, AutopilotTarget, RunListItem, TargetKind, CreateTargetPayload,
+  AutopilotService, AutopilotTarget, RunListItem, TargetKind, CreateTargetPayload, CoverageLevel,
 } from '../../services/autopilot.service';
 
 @Component({
@@ -25,6 +25,7 @@ export class AutopilotComponent implements OnInit {
   showForm = false;
   kind: TargetKind = 'website';
   name = '';
+  coverage: CoverageLevel = 'minimal';
   siteUrl = '';
   repoUrl = '';
   githubToken = '';
@@ -53,7 +54,7 @@ export class AutopilotComponent implements OnInit {
 
   addTarget(): void {
     this.formError = '';
-    const payload: CreateTargetPayload = { kind: this.kind, name: this.name.trim() || undefined };
+    const payload: CreateTargetPayload = { kind: this.kind, name: this.name.trim() || undefined, coverage: this.coverage };
     if (this.kind === 'website') {
       if (!this.siteUrl.trim()) { this.formError = 'Enter a website URL.'; return; }
       payload.site_url = this.siteUrl.trim();
@@ -77,7 +78,7 @@ export class AutopilotComponent implements OnInit {
 
   resetForm(): void {
     this.showForm = false;
-    this.name = ''; this.siteUrl = ''; this.repoUrl = ''; this.githubToken = '';
+    this.name = ''; this.coverage = 'minimal'; this.siteUrl = ''; this.repoUrl = ''; this.githubToken = '';
     this.withCreds = false; this.username = ''; this.password = ''; this.loginUrl = '';
   }
 
