@@ -2,14 +2,24 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { ApexAxisChartSeries } from 'ng-apexcharts';
 
 import {
   AutopilotService, AutopilotTarget, RunListItem, TargetKind, CreateTargetPayload, CoverageLevel,
 } from '../../services/autopilot.service';
+import { TrendLineComponent } from '../../components/charts/trend-line';
+import { DonutComponent } from '../../components/charts/donut';
+
+interface Dash {
+  targets: number; runs: number; passRate: number; testsRun: number;
+  bugsOpen: number; bugsResolved: number; healed: number;
+  passSeries: ApexAxisChartSeries; passCats: string[];
+  bugSeries: ApexAxisChartSeries; bugCats: string[]; hasTrend: boolean;
+}
 
 @Component({
   selector: 'app-autopilot',
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TrendLineComponent, DonutComponent],
   templateUrl: './autopilot.html',
   styleUrl: './autopilot.scss',
 })
@@ -19,6 +29,8 @@ export class AutopilotComponent implements OnInit {
 
   targets: AutopilotTarget[] = [];
   runs: RunListItem[] = [];
+  allRuns: RunListItem[] = [];
+  dash: Dash | null = null;
   loading = true;
 
   // ── add-target form ──
@@ -33,6 +45,10 @@ export class AutopilotComponent implements OnInit {
   username = '';
   password = '';
   loginUrl = '';
+  advOpen = false;
+  depth = 2;
+  maxPages = 12;
+  instructions = '';
 
   submitting = false;
   formError = '';
@@ -43,10 +59,53 @@ export class AutopilotComponent implements OnInit {
   refresh(): void {
     this.loading = true;
     this.svc.listTargets().subscribe({
-      next: ({ targets }) => { this.targets = targets; this.loading = false; },
+      next: ({ targets }) => { this.targets = targets; this.loading = false; this.computeDash(); },
       error: () => { this.loading = false; },
     });
-    this.svc.listRuns().subscribe({ next: ({ runs }) => { this.runs = runs.slice(0, 12); } });
+    this.svc.listRuns().subscribe({ next: ({ runs }) => {
+      this.allRuns = runs; this.runs = runs.slice(0, 12); this.computeDash();
+    } });
+  }
+
+  /** Roll up real run history into the customer-facing analytics dashboard. */
+  private computeDash(): void {
+    const runs = this.allRuns;
+    const completed = runs.filter(r => r.summary && (r.summary.total ?? 0) >= 0);
+    const rate = (r: RunListItem) => {
+      const s = r.summary!; return s.total ? Math.round((s.passed / s.total) * 100) : 0;
+    };
+    const withTotals = completed.filter(r => (r.summary!.total ?? 0) > 0);
+    const passRate = withTotals.length
+      ? Math.round(withTotals.reduce((a, r) => a + rate(r), 0) / withTotals.length) : 0;
+    const testsRun = completed.reduce((a, r) => a + (r.summary!.total ?? 0), 0);
+    const healed = runs.reduce((a, r) => a + (r.healed ?? 0), 0);
+
+    // per-target: open = latest run's bugs; resolved = sum of positive drops between consecutive runs
+    let bugsOpen = 0, bugsResolved = 0;
+    const byTarget = new Map<string, RunListItem[]>();
+    for (const r of completed) {
+      const arr = byTarget.get(r.target_id) ?? [];
+      arr.push(r); byTarget.set(r.target_id, arr);
+    }
+    for (const arr of byTarget.values()) {
+      const asc = [...arr].sort((a, b) => a.created_at - b.created_at);
+      bugsOpen += asc[asc.length - 1]?.bugs_count ?? 0;
+      for (let i = 1; i < asc.length; i++) {
+        bugsResolved += Math.max(0, (asc[i - 1].bugs_count ?? 0) - (asc[i].bugs_count ?? 0));
+      }
+    }
+
+    // trends — last 12 completed runs, chronological
+    const recent = [...completed].sort((a, b) => a.created_at - b.created_at).slice(-12);
+    const cats = recent.map(r => new Date(r.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+
+    this.dash = {
+      targets: this.targets.length, runs: runs.length, passRate, testsRun,
+      bugsOpen, bugsResolved, healed,
+      passSeries: [{ name: 'Pass rate', data: recent.map(rate) }], passCats: cats,
+      bugSeries: [{ name: 'Bugs found', data: recent.map(r => r.bugs_count ?? 0) }], bugCats: cats,
+      hasTrend: recent.length >= 2,
+    };
   }
 
   toggleForm(): void { this.showForm = !this.showForm; this.formError = ''; }
@@ -58,6 +117,9 @@ export class AutopilotComponent implements OnInit {
     if (this.kind === 'website') {
       if (!this.siteUrl.trim()) { this.formError = 'Enter a website URL.'; return; }
       payload.site_url = this.siteUrl.trim();
+      payload.crawl_depth = this.depth;
+      payload.max_pages = this.maxPages;
+      if (this.instructions.trim()) payload.instructions = this.instructions.trim();
       if (this.withCreds && this.username && this.password) {
         payload.creds = { username: this.username, password: this.password, login_url: this.loginUrl.trim() || undefined };
       }
@@ -80,6 +142,7 @@ export class AutopilotComponent implements OnInit {
     this.showForm = false;
     this.name = ''; this.coverage = 'minimal'; this.siteUrl = ''; this.repoUrl = ''; this.githubToken = '';
     this.withCreds = false; this.username = ''; this.password = ''; this.loginUrl = '';
+    this.advOpen = false; this.depth = 2; this.maxPages = 12; this.instructions = '';
   }
 
   runNow(t: AutopilotTarget): void {

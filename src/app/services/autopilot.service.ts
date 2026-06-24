@@ -5,12 +5,36 @@ import { Observable } from 'rxjs';
 export type TargetKind = 'repo' | 'website';
 export type CoverageLevel = 'minimal' | 'critical' | 'standard' | 'deep';
 
+export type CandidateTier = 'minimal' | 'critical' | 'standard' | 'deep' | 'backlog';
+
 export interface TargetTest {
   id: string;
   title: string;
   description?: string;
   file?: string;
   enabled: boolean;
+}
+
+/** A ranked test candidate from the planning phase — powers the coverage dashboard + heat map. */
+export interface TestCandidate {
+  id: string;
+  title: string;
+  description?: string;
+  area?: string;
+  score: number;        // 0-100 business criticality (ranking key)
+  confidence: number;   // 0-100 automatability (heat-map intensity)
+  rank?: number;        // 1-based position in the ranked list
+  tier?: CandidateTier; // lowest coverage level whose budget includes it
+  implemented?: boolean;
+  file?: string;
+  enabled?: boolean;    // false once the user has curated/disabled it
+}
+
+export interface ProjectFile {
+  path: string;
+  bytes: number;
+  content: string;
+  truncated?: boolean;
 }
 
 export interface AutopilotTarget {
@@ -27,8 +51,15 @@ export interface AutopilotTarget {
   private?: boolean;
   has_creds: boolean;
   coverage?: CoverageLevel;
+  crawl_depth?: number;
+  max_pages?: number;
+  instructions?: string;
+  coverage_max?: Record<string, number>;
+  min_score?: number;
   suite_ready?: boolean;
+  has_project?: boolean;
   tests?: TargetTest[];
+  candidates?: TestCandidate[];
   last_run_id?: string;
   last_run_status?: string;
   created_at: number;
@@ -82,6 +113,7 @@ export interface AutopilotRun {
   tests: TestResult[];
   summary?: RunSummary | null;
   artifacts?: RunArtifacts | null;
+  healed?: number;
   error?: string;
   created_at: number;
   updated_at: number;
@@ -94,6 +126,8 @@ export interface RunListItem {
   name: string;
   status: string;
   summary?: RunSummary | null;
+  bugs_count?: number;
+  healed?: number;
   created_at: number;
   updated_at: number;
 }
@@ -113,11 +147,24 @@ export interface CreateTargetPayload {
   kind: TargetKind;
   name?: string;
   coverage?: CoverageLevel;
+  crawl_depth?: number;
+  max_pages?: number;
+  instructions?: string;
   repo_url?: string;
   site_url?: string;
   github_token?: string;
   creds?: { username: string; password: string; login_url?: string };
 }
+
+export interface TargetPatch {
+  coverage?: CoverageLevel;
+  name?: string;
+  crawl_depth?: number;
+  max_pages?: number;
+  instructions?: string;
+}
+
+export interface ProjectFilesResult { files: ProjectFile[]; count: number; ready: boolean; }
 
 @Injectable({ providedIn: 'root' })
 export class AutopilotService {
@@ -145,8 +192,16 @@ export class AutopilotService {
     return this.http.delete<{ deleted: boolean }>(`${this.apiBase}/autopilot/targets/${id}`);
   }
 
-  updateTarget(id: string, patch: { coverage?: CoverageLevel; name?: string }): Observable<AutopilotTarget> {
+  updateTarget(id: string, patch: TargetPatch): Observable<AutopilotTarget> {
     return this.http.patch<AutopilotTarget>(`${this.apiBase}/autopilot/targets/${id}`, patch);
+  }
+
+  getProjectFiles(id: string): Observable<ProjectFilesResult> {
+    return this.http.get<ProjectFilesResult>(`${this.apiBase}/autopilot/targets/${id}/project`);
+  }
+
+  downloadUrl(id: string): string {
+    return `${this.apiBase}/autopilot/targets/${id}/download`;
   }
 
   deleteTest(targetId: string, testId: string): Observable<{ disabled_tests: string[] }> {

@@ -8,6 +8,45 @@
     <button class="btn primary" (click)="toggleForm()">{{ showForm ? 'Close' : '+ Add target' }}</button>
   </header>
 
+  <!-- ── analytics dashboard ── -->
+  @if (dash && (dash.runs > 0 || dash.targets > 0)) {
+    <section class="dashboard">
+      <div class="d-head">
+        <h2>Quality dashboard</h2>
+        <span class="d-sub">Across {{ dash.targets }} target(s) · {{ dash.runs }} cloud run(s)</span>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="k-n">{{ dash.passRate }}<small>%</small></div><div class="k-l">Avg pass rate</div></div>
+        <div class="kpi"><div class="k-n">{{ dash.testsRun }}</div><div class="k-l">Tests executed</div></div>
+        <div class="kpi warn"><div class="k-n">{{ dash.bugsOpen }}</div><div class="k-l">Open bugs</div></div>
+        <div class="kpi ok"><div class="k-n">{{ dash.bugsResolved }}</div><div class="k-l">Bugs resolved</div></div>
+        <div class="kpi violet"><div class="k-n">{{ dash.healed }}</div><div class="k-l">Auto-healed</div></div>
+        <div class="kpi"><div class="k-n">{{ dash.runs }}</div><div class="k-l">Total runs</div></div>
+      </div>
+
+      <div class="d-charts">
+        <div class="d-card ring">
+          <app-donut [current]="dash.passRate" [label]="'Pass rate'" [size]="150"></app-donut>
+        </div>
+        <div class="d-card">
+          <div class="dc-title">Pass rate over time</div>
+          @if (dash.hasTrend) {
+            <app-trend-line [series]="dash.passSeries" [categories]="dash.passCats"
+                            [colors]="['#22c55e']" [height]="180" [yMax]="100" [suffix]="'%'"></app-trend-line>
+          } @else { <p class="dc-empty">Run a few suites to see the trend.</p> }
+        </div>
+        <div class="d-card">
+          <div class="dc-title">Bugs found per run <span class="dc-hint">↓ lower is better</span></div>
+          @if (dash.hasTrend) {
+            <app-trend-line [series]="dash.bugSeries" [categories]="dash.bugCats"
+                            [colors]="['#f0a23a']" [height]="180"></app-trend-line>
+          } @else { <p class="dc-empty">Run a few suites to see the trend.</p> }
+        </div>
+      </div>
+    </section>
+  }
+
   <!-- ── add-target form ── -->
   @if (showForm) {
     <section class="card form">
@@ -36,6 +75,20 @@
           </div>
           <p class="hint">Minimal = one test that checks every page is reachable. You can change this and curate tests later.</p>
         </div>
+        <button type="button" class="adv-toggle" (click)="advOpen = !advOpen">
+          {{ advOpen ? '▲' : '▼' }} Advanced — crawl depth, page budget & instructions
+        </button>
+        @if (advOpen) {
+          <div class="adv-grid">
+            <label class="fld"><span>Crawl depth <em>(1–2)</em></span><input type="number" min="1" max="2" [(ngModel)]="depth" /></label>
+            <label class="fld"><span>Max pages <em>(1–15)</em></span><input type="number" min="1" max="15" [(ngModel)]="maxPages" /></label>
+          </div>
+          <label class="fld">
+            <span>Instructions to the agent <em>(optional)</em></span>
+            <textarea rows="2" [(ngModel)]="instructions" placeholder="e.g. Focus on the contact form. Don't test external links."></textarea>
+          </label>
+          <p class="hint">Depth &amp; pages are capped to keep even large sites cheap. The planner applies valid, safe guidance.</p>
+        }
         <label class="check">
           <input type="checkbox" [(ngModel)]="withCreds" />
           <span>This site needs a login</span>

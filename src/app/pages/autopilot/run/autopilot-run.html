@@ -37,40 +37,72 @@
         <div class="tile ok"><div class="n">{{ run.summary.passed }}</div><div class="l">Passed</div></div>
         <div class="tile bad"><div class="n">{{ run.summary.failed }}</div><div class="l">Failed</div></div>
         <div class="tile warn"><div class="n">{{ bugs.length }}</div><div class="l">Bugs</div></div>
+        @if (healed) { <div class="tile heal"><div class="n">{{ healed }}</div><div class="l">Auto-healed</div></div> }
       </div>
     }
 
-    <div class="cols">
-      <!-- left: live log -->
-      <section class="card">
-        <h2>Live run log @if (isRunning) { <span class="tag-live">streaming</span> }</h2>
-        <div class="log">
-          @for (e of log; track $index) {
-            <div class="row {{ logClass(e) }}">
-              <span class="t">{{ e.title || e.msg }}</span>
-            </div>
-          }
-          @if (!log.length) { <p class="muted">Waiting for the worker to start…</p> }
+    <!-- video gallery — primary post-run view -->
+    @if (hasVideos) {
+      <section class="block gallery">
+        <h2>🎬 Run recordings <span class="count">{{ videos.length }}</span></h2>
+        <div class="player">
+          <video #player [src]="videoUrl(videos[activeVideo])" controls preload="metadata" playsinline></video>
+          <div class="p-meta">
+            <span class="p-title">{{ videoLabel(activeVideo) }}</span>
+            <a class="p-dl" [href]="videoUrl(videos[activeVideo])" target="_blank" rel="noopener" download>⬇ Download</a>
+          </div>
         </div>
-      </section>
-
-      <!-- right: filmstrip -->
-      <section class="card">
-        <h2>Filmstrip @if (filmstrip.length) { <span class="count">{{ filmstrip.length }}</span> }</h2>
-        @if (filmstrip.length) {
-          <div class="strip">
-            @for (e of filmstrip; track $index) {
-              <figure>
-                <img [src]="captureUrl(e.capture)" [alt]="e.title || 'frame'" loading="lazy" />
-                <figcaption [class.fail]="e.type === 'fail'">{{ e.title }}</figcaption>
-              </figure>
+        @if (videos.length > 1) {
+          <div class="gthumbs">
+            @for (v of videos; track v; let i = $index) {
+              <button class="gthumb" [class.sel]="i === activeVideo" (click)="selectVideo(i)">
+                <video [src]="videoUrl(v)" preload="metadata" muted></video>
+                <span>{{ i + 1 }}</span>
+              </button>
             }
           </div>
-        } @else {
-          <p class="muted">Screenshots appear here as tests run.</p>
         }
       </section>
-    </div>
+    } @else if (isRunning) {
+      <div class="banner live-note">🎥 Recordings are captured during the run and appear here when it finishes.</div>
+    }
+
+    <!-- live activity (log + filmstrip) — collapsible, secondary after a run -->
+    <section class="block">
+      <button class="disclosure" (click)="logOpen = !logOpen">
+        <span>{{ isRunning ? '🔴 Live activity' : 'Run log & live frames' }}
+          @if (isRunning) { <span class="tag-live">streaming</span> }</span>
+        <span class="chev">{{ logOpen ? '▲' : '▼' }}</span>
+      </button>
+      @if (logOpen) {
+        <div class="cols">
+          <section class="card">
+            <h2>Run log</h2>
+            <div class="log">
+              @for (e of log; track $index) {
+                <div class="row {{ logClass(e) }}"><span class="t">{{ e.title || e.msg }}</span></div>
+              }
+              @if (!log.length) { <p class="muted">Waiting for the worker to start…</p> }
+            </div>
+          </section>
+          <section class="card">
+            <h2>Live frames @if (filmstrip.length) { <span class="count">{{ filmstrip.length }}</span> }</h2>
+            @if (filmstrip.length) {
+              <div class="strip">
+                @for (e of filmstrip; track $index) {
+                  <figure>
+                    <img [src]="captureUrl(e.capture)" [alt]="e.title || 'frame'" loading="lazy" />
+                    <figcaption [class.fail]="e.type === 'fail'">{{ e.title }}</figcaption>
+                  </figure>
+                }
+              </div>
+            } @else {
+              <p class="muted">Screenshots appear here as tests run.</p>
+            }
+          </section>
+        </div>
+      }
+    </section>
 
     <!-- tests -->
     @if (tests.length) {

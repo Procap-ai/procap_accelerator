@@ -22,6 +22,7 @@ export class AutopilotRunComponent implements OnInit, OnDestroy {
   run: AutopilotRun | null = null;
   loading = true;
   errorMessage = '';
+  logOpen = true;
   private polling?: Subscription;
 
   // queued is shown as the entry point; cloning/exploring share a slot by kind
@@ -83,6 +84,16 @@ export class AutopilotRunComponent implements OnInit, OnDestroy {
   }
   get bugs(): Bug[] { return this.run?.bugs ?? []; }
   get tests(): TestResult[] { return this.run?.tests ?? []; }
+  get healed(): number { return this.run?.healed ?? 0; }
+
+  // ── video gallery (primary post-run view) ────────────────────────────────────
+  activeVideo = 0;
+  get videos(): string[] { return this.run?.artifacts?.videos ?? []; }
+  get hasVideos(): boolean { return this.videos.length > 0; }
+  get traces(): string[] { return this.run?.artifacts?.traces ?? []; }
+  videoUrl(f: string): string { return this.svc.artifactUrl(this.runId, f); }
+  selectVideo(i: number): void { this.activeVideo = i; }
+  videoLabel(i: number): string { return `Recording ${i + 1}`; }
 
   testClass(s: string): string {
     if (s === 'passed') return 'pass';
