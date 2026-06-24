@@ -8,7 +8,12 @@
   } @else if (run) {
     <header class="r-head">
       <div>
-        <div class="eyebrow">{{ run.kind === 'repo' ? 'Repo run' : 'Website run' }}</div>
+        <div class="eyebrow">
+          {{ run.kind === 'repo' ? 'Repo run' : 'Website run' }}
+          @if (run.kind !== 'repo') {
+            <span class="mode-chip" [class.reuse]="isReuse">{{ isReuse ? '· saved suite' : '· regenerated' }}</span>
+          }
+        </div>
         <h1>{{ run.name }}</h1>
         <a class="url" [href]="run.url" target="_blank" rel="noopener">{{ run.url }}</a>
       </div>

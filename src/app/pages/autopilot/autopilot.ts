@@ -8,7 +8,6 @@ import {
   AutopilotService, AutopilotTarget, RunListItem, TargetKind, CreateTargetPayload, CoverageLevel,
 } from '../../services/autopilot.service';
 import { TrendLineComponent } from '../../components/charts/trend-line';
-import { DonutComponent } from '../../components/charts/donut';
 
 interface Dash {
   targets: number; runs: number; passRate: number; testsRun: number;
@@ -19,7 +18,7 @@ interface Dash {
 
 @Component({
   selector: 'app-autopilot',
-  imports: [CommonModule, FormsModule, RouterModule, TrendLineComponent, DonutComponent],
+  imports: [CommonModule, FormsModule, RouterModule, TrendLineComponent],
   templateUrl: './autopilot.html',
   styleUrl: './autopilot.scss',
 })

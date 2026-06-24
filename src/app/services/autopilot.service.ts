@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 export type TargetKind = 'repo' | 'website';
 export type CoverageLevel = 'minimal' | 'critical' | 'standard' | 'deep';
+export type RunMode = 'reuse' | 'regenerate';
 
 export type CandidateTier = 'minimal' | 'critical' | 'standard' | 'deep' | 'backlog';
 
@@ -108,6 +109,7 @@ export interface AutopilotRun {
   name: string;
   url?: string;
   status: string;          // queued → exploring|cloning → generating → installing → running → triaging → done | failed
+  mode?: RunMode;          // reuse = ran saved suite; regenerate = re-explored + regenerated
   progress: ProgressEntry[];
   bugs: Bug[];
   tests: TestResult[];
@@ -213,9 +215,9 @@ export class AutopilotService {
     return this.http.post<{ ok: boolean }>(`${this.apiBase}/autopilot/targets/${targetId}/regenerate`, {});
   }
 
-  createRun(targetId: string): Observable<{ run_id: string; status: string }> {
-    return this.http.post<{ run_id: string; status: string }>(
-      `${this.apiBase}/autopilot/runs`, { target_id: targetId });
+  createRun(targetId: string, mode?: RunMode): Observable<{ run_id: string; status: string; mode: RunMode }> {
+    return this.http.post<{ run_id: string; status: string; mode: RunMode }>(
+      `${this.apiBase}/autopilot/runs`, { target_id: targetId, mode });
   }
 
   listRuns(targetId?: string): Observable<{ runs: RunListItem[] }> {

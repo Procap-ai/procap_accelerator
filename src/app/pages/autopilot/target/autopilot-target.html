@@ -15,7 +15,15 @@
         @if (target.has_project) {
           <a class="btn sm" [href]="downloadUrl()" title="Download the generated Playwright project">⬇ Download project</a>
         }
-        <button class="btn primary" [disabled]="busy" (click)="runNow()">▶ Run now</button>
+        @if (canReuse) {
+          <button class="btn primary" [disabled]="busy" (click)="runNow('reuse')"
+                  title="Run the saved suite as-is — no re-exploring or regenerating">▶ Run saved suite</button>
+          <button class="btn" [disabled]="busy" (click)="runNow('regenerate')"
+                  title="Re-explore the site and regenerate the suite, then run">↻ Regenerate &amp; run</button>
+        } @else {
+          <button class="btn primary" [disabled]="busy" (click)="runNow('regenerate')"
+                  title="First run — explore the site, plan & generate the suite, then run">▶ Explore &amp; generate</button>
+        }
       </div>
     </header>
 
@@ -42,6 +50,35 @@
         </div>
       </section>
     }
+
+    <!-- advanced options -->
+    <section class="card">
+      <button class="disclosure" (click)="advOpen = !advOpen">
+        <span>⚙ Advanced — crawl depth, page budget & instructions</span><span class="chev">{{ advOpen ? '▲' : '▼' }}</span>
+      </button>
+      @if (advOpen) {
+        <div class="adv">
+          <div class="adv-row">
+            <label>Crawl depth <small>(1–2, capped for cost)</small></label>
+            <input type="number" min="1" max="2" [(ngModel)]="depth" />
+          </div>
+          <div class="adv-row">
+            <label>Max pages <small>(1–15, capped for cost)</small></label>
+            <input type="number" min="1" max="15" [(ngModel)]="maxPages" />
+          </div>
+          <div class="adv-col">
+            <label>Instructions to the agent <small>(optional)</small></label>
+            <textarea rows="3" [(ngModel)]="instructions"
+              placeholder="e.g. Focus on the checkout flow. Don't test the admin area or external links."></textarea>
+            <p class="muted sm">The planner applies what’s valid &amp; safe — excludes flows you say to avoid, ranks flows you say to focus higher.</p>
+          </div>
+          <div class="adv-actions">
+            <button class="btn sm primary" [disabled]="busy || !advancedDirty" (click)="saveAdvanced()">Save</button>
+            @if (advancedDirty) { <span class="muted sm">Saving regenerates the suite on the next run.</span> }
+          </div>
+        </div>
+      }
+    </section>
 
     <!-- candidate dashboard + heat map -->
     <section class="card">
@@ -95,35 +132,6 @@
             </li>
           }
         </ul>
-      }
-    </section>
-
-    <!-- advanced options -->
-    <section class="card">
-      <button class="disclosure" (click)="advOpen = !advOpen">
-        <span>⚙ Advanced — crawl depth, page budget & instructions</span><span class="chev">{{ advOpen ? '▲' : '▼' }}</span>
-      </button>
-      @if (advOpen) {
-        <div class="adv">
-          <div class="adv-row">
-            <label>Crawl depth <small>(1–2, capped for cost)</small></label>
-            <input type="number" min="1" max="2" [(ngModel)]="depth" />
-          </div>
-          <div class="adv-row">
-            <label>Max pages <small>(1–15, capped for cost)</small></label>
-            <input type="number" min="1" max="15" [(ngModel)]="maxPages" />
-          </div>
-          <div class="adv-col">
-            <label>Instructions to the agent <small>(optional)</small></label>
-            <textarea rows="3" [(ngModel)]="instructions"
-              placeholder="e.g. Focus on the checkout flow. Don't test the admin area or external links."></textarea>
-            <p class="muted sm">The planner applies what’s valid &amp; safe — excludes flows you say to avoid, ranks flows you say to focus higher.</p>
-          </div>
-          <div class="adv-actions">
-            <button class="btn sm primary" [disabled]="busy || !advancedDirty" (click)="saveAdvanced()">Save</button>
-            @if (advancedDirty) { <span class="muted sm">Saving regenerates the suite on the next run.</span> }
-          </div>
-        </div>
       }
     </section>
 

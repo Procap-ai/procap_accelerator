@@ -195,9 +195,14 @@ export class AutopilotTargetComponent implements OnInit {
     this.svc.deleteTest(this.targetId, c.id).subscribe({ next: () => this.load() });
   }
 
-  runNow(): void {
+  /** Whether a saved suite exists that a "reuse" run could execute without regenerating. */
+  get canReuse(): boolean { return !!this.target?.suite_ready; }
+
+  runNow(mode?: 'reuse' | 'regenerate'): void {
+    if (mode === 'regenerate' &&
+        !confirm('Re-explore the site and regenerate the suite? This replaces the current generated tests.')) return;
     this.busy = true;
-    this.svc.createRun(this.targetId).subscribe({
+    this.svc.createRun(this.targetId, mode).subscribe({
       next: ({ run_id }) => { this.busy = false; void this.router.navigate(['/autopilot/run', run_id]); },
       error: (err: unknown) => {
         this.busy = false;

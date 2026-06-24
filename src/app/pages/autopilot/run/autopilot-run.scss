@@ -23,6 +23,8 @@
 
 .r-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin: 18px 0 22px; flex-wrap: wrap; }
 .eyebrow { font: 600 12px/1 'JetBrains Mono', monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--violet); }
+.mode-chip { letter-spacing: .04em; color: var(--amber); margin-left: 4px; }
+.mode-chip.reuse { color: var(--accent); }
 h1 { font-size: 28px; margin: 10px 0 4px; letter-spacing: -.02em; }
 .url { color: var(--faint); font-size: 13px; text-decoration: none; word-break: break-all; }
 .url:hover { color: var(--accent); }

@@ -39,6 +39,12 @@ export class AutopilotRunComponent implements OnInit, OnDestroy {
     { id: 'running', label: 'Run', icon: '▶️' },
     { id: 'triaging', label: 'Triage', icon: '🔎' },
   ];
+  // reuse mode skips explore/generate — it runs the saved suite directly
+  readonly reuseStages: Stage[] = [
+    { id: 'installing', label: 'Load suite', icon: '📂' },
+    { id: 'running', label: 'Run', icon: '▶️' },
+    { id: 'triaging', label: 'Triage', icon: '🔎' },
+  ];
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -58,7 +64,11 @@ export class AutopilotRunComponent implements OnInit, OnDestroy {
       });
   }
 
-  get stages(): Stage[] { return this.run?.kind === 'repo' ? this.repoStages : this.websiteStages; }
+  get stages(): Stage[] {
+    if (this.run?.kind === 'repo') return this.repoStages;
+    return this.run?.mode === 'reuse' ? this.reuseStages : this.websiteStages;
+  }
+  get isReuse(): boolean { return this.run?.mode === 'reuse'; }
   get isRunning(): boolean { return !!this.run && !['done', 'failed'].includes(this.run.status); }
   get isDone(): boolean { return this.run?.status === 'done'; }
   get isFailed(): boolean { return this.run?.status === 'failed'; }
