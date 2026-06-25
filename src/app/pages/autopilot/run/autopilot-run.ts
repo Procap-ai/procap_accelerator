@@ -64,16 +64,23 @@ export class AutopilotRunComponent implements OnInit, OnDestroy {
       });
   }
 
+  // the self-heal stage only exists on runs that actually had failures to heal — inject it
+  // (after Run, before Triage) when healing is happening or happened, so green runs stay clean.
+  private readonly healStage: Stage = { id: 'healing', label: 'Self-heal', icon: '🩹' };
   get stages(): Stage[] {
-    if (this.run?.kind === 'repo') return this.repoStages;
-    return this.run?.mode === 'reuse' ? this.reuseStages : this.websiteStages;
+    const base = this.run?.kind === 'repo' ? this.repoStages
+      : this.run?.mode === 'reuse' ? this.reuseStages : this.websiteStages;
+    const showHeal = this.run?.status === 'healing' || this.healed > 0;
+    if (!showHeal) return base;
+    const i = base.findIndex(s => s.id === 'triaging');
+    return i < 0 ? base : [...base.slice(0, i), this.healStage, ...base.slice(i)];
   }
   get isReuse(): boolean { return this.run?.mode === 'reuse'; }
   get isRunning(): boolean { return !!this.run && !['done', 'failed'].includes(this.run.status); }
   get isDone(): boolean { return this.run?.status === 'done'; }
   get isFailed(): boolean { return this.run?.status === 'failed'; }
 
-  private readonly order = ['queued', 'cloning', 'exploring', 'generating', 'installing', 'running', 'triaging', 'done'];
+  private readonly order = ['queued', 'cloning', 'exploring', 'generating', 'installing', 'running', 'healing', 'triaging', 'done'];
   stageState(stageId: string): 'pending' | 'active' | 'done' {
     if (!this.run) return 'pending';
     if (this.run.status === 'failed') return 'pending';
