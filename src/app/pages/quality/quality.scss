@@ -543,7 +543,35 @@ button {
   input, select { width: 100%; background: var(--panel); border: 1px solid var(--border);
     color: var(--text); border-radius: 6px; padding: 6px 8px; font-size: 12px; }
   &.jrn-head { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
-    margin-bottom: 6px; span { padding: 0 2px; } } }
+    margin-bottom: 6px; span { padding: 0 2px; } }
+  // detected rows: alignment is read-only (a status chip) and the trailing cell is a Promote button
+  &.detected-row { grid-template-columns: 2.4fr 1fr .9fr 1.2fr 1fr 110px; } }
+.align-cell { font-size: 11px; padding: 4px 9px; border-radius: 6px; text-transform: capitalize;
+  font-weight: 700; text-align: center; letter-spacing: .03em;
+  &.aligned { background: #1e3a2a; color: #7ee0a8; }
+  &.partial { background: #3a2f1a; color: #f5c87a; }
+  &.unaligned { background: #3a1f2a; color: #f5a3c0; }
+  &.no-test { background: #3a1f2a; color: #f5a3c0; } }
+
+// ── provenance segregation band (Journeys & Risk) ──
+.prov-band { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 10px;
+  margin: 18px 0 10px; border: 1px solid var(--border);
+  &.recorded { background: linear-gradient(90deg, #15263a 0%, var(--panel) 70%); border-color: #1f3a52; }
+  &.detected { background: linear-gradient(90deg, #2e2615 0%, var(--panel) 70%); border-color: #4a3a1a; }
+  .prov-meta { display: flex; flex-direction: column; gap: 2px;
+    b { font-size: 14px; color: var(--text); } }
+  .prov-sub { font-size: 11px; color: var(--muted); }
+  .prov-stat { display: flex; flex-direction: column; align-items: center; min-width: 56px;
+    b { font-size: 18px; color: var(--text); line-height: 1.1; }
+    span { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    &.good b { color: #7ee0a8; } &.warn b { color: #f5c87a; } &.bad b { color: #f5a3c0; } } }
+.prov-chip { font-size: 10px; font-weight: 700; letter-spacing: .06em; padding: 5px 10px; border-radius: 20px;
+  white-space: nowrap;
+  &.recorded { background: #16324c; color: #7dd3fc; }
+  &.detected { background: #3a2f1a; color: #f5c87a; } }
+.prov-note { margin-top: 16px; padding: 12px 14px; border-radius: 10px; font-size: 12px; line-height: 1.6;
+  color: var(--muted); background: var(--panel); border: 1px solid var(--border); border-left: 3px solid #4a3a1a;
+  b { color: var(--text); } }
 
 // ── assurance index + journey table ──
 .assur-formula { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);

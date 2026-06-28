@@ -94,34 +94,99 @@ const BUILTIN = [
     </div>
   </ng-container>
 
-  <!-- ───────── Journeys & Risk (functional, local) ───────── -->
+  <!-- ───────── Journeys & Risk (functional, local) — segregated by provenance ───────── -->
   <div class="panel" *ngIf="tab === 'journeys'">
-    <h3>Candidate user journeys <span class="rule-desc" style="text-transform:none;letter-spacing:0">risk-weighted; feeds AC alignment &amp; coverage gaps</span></h3>
-    <p class="rule-desc" style="text-transform:none;letter-spacing:0;line-height:1.6;margin:0 0 14px">
-      Define the business-critical journeys to assure (the "journeys.yaml" a customer commits, or the
-      output of the explorer agent / PROD-analytics). Each carries a criticality and a risk-$ weight —
-      published on the <b>Journey alignment</b> page as covered / at-risk and potential $ exposure.</p>
+    <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:320px">
+        <h3 style="margin-top:0">Candidate user journeys <span class="rule-desc" style="text-transform:none;letter-spacing:0">risk-weighted; feeds AC alignment &amp; coverage gaps</span></h3>
+        <p class="rule-desc" style="text-transform:none;letter-spacing:0;line-height:1.6;margin:0 0 4px">
+          Define the business-critical journeys to assure — <b>segregated by provenance</b>.
+          <b>Authored / recorded</b> journeys come from the Playwright explorer agent, recordings, or
+          hand-authored tests (observed). <b>Detected</b> journeys are reconstructed from PROD Google
+          Analytics (modelled from real traffic) and surface coverage gaps to review before assuring.</p>
+      </div>
+      <label class="cfg-label" style="margin:0">Show
+        <select class="repo-select" [(ngModel)]="jrnFilter" style="min-width:200px;margin-top:6px">
+          <option value="all">All provenances</option>
+          <option value="recorded">Explorer agent / recorded</option>
+          <option value="detected">PROD analytics / detected</option>
+        </select></label>
+    </div>
 
-    <div class="jrn-row jrn-head">
-      <span>Journey</span><span>Criticality</span><span>Risk $</span><span>Source</span><span>Alignment</span><span></span>
-    </div>
-    <div class="jrn-row" *ngFor="let j of journeys; let i = index">
-      <input [(ngModel)]="j.name" placeholder="Journey name" />
-      <select [(ngModel)]="j.criticality"><option>low</option><option>medium</option><option>high</option></select>
-      <input type="number" [(ngModel)]="j.weightUsd" min="0" step="100" />
-      <input [(ngModel)]="j.source" placeholder="Jira-1042 / PROD" />
-      <select [(ngModel)]="j.alignment">
-        <option value="aligned">aligned</option><option value="partial">partial</option>
-        <option value="unaligned">unaligned</option><option value="no-test">no-test</option>
-      </select>
-      <button class="link-x ghost" (click)="removeJourney(i)" title="Remove">✕</button>
-    </div>
+    <!-- ── Authored / recorded — observed ── -->
+    <ng-container *ngIf="jrnFilter !== 'detected'">
+      <div class="prov-band recorded">
+        <span class="prov-chip recorded">● RECORDED · observed</span>
+        <div class="prov-meta">
+          <b>Authored / recorded</b>
+          <span class="prov-sub">explorer agent · recordings · hand-authored — traceable to a test artifact</span>
+        </div>
+        <span class="spacer" style="flex:1"></span>
+        <span class="prov-stat"><b>{{ recorded.length }}</b><span>journeys</span></span>
+        <span class="prov-stat"><b>\${{ sumUsd(recorded) | number }}</b><span>exposure</span></span>
+        <span class="prov-stat good"><b>{{ countAlign(recorded, 'aligned') }}</b><span>aligned</span></span>
+        <span class="prov-stat warn"><b>{{ countAlign(recorded, 'partial') }}</b><span>partial</span></span>
+        <span class="prov-stat bad"><b>{{ countAlign(recorded, 'unaligned') }}</b><span>unaligned</span></span>
+      </div>
+
+      <div class="jrn-row jrn-head">
+        <span>Journey</span><span>Criticality</span><span>Risk $</span><span>Source</span><span>Alignment</span><span></span>
+      </div>
+      <div class="jrn-row" *ngFor="let j of recorded">
+        <input [(ngModel)]="j.name" placeholder="Journey name" />
+        <select [(ngModel)]="j.criticality"><option>low</option><option>medium</option><option>high</option></select>
+        <input type="number" [(ngModel)]="j.weightUsd" min="0" step="100" />
+        <input [(ngModel)]="j.source" placeholder="Jira-1042 / auth.feature" />
+        <select [(ngModel)]="j.alignment">
+          <option value="aligned">aligned</option><option value="partial">partial</option>
+          <option value="unaligned">unaligned</option><option value="no-test">no-test</option>
+        </select>
+        <button class="link-x ghost" (click)="removeJourney(j)" title="Remove">✕</button>
+      </div>
+      <p class="empty-hint" *ngIf="!recorded.length" style="margin:6px 0;font-size:13px">No recorded journeys.</p>
+    </ng-container>
+
+    <!-- ── Detected from PROD analytics — modelled ── -->
+    <ng-container *ngIf="jrnFilter !== 'recorded'">
+      <div class="prov-band detected">
+        <span class="prov-chip detected">◆ DETECTED · modelled</span>
+        <div class="prov-meta">
+          <b>Detected from PROD analytics</b>
+          <span class="prov-sub">reconstructed from real traffic · de-duplicated against recorded · review &amp; promote before assuring</span>
+        </div>
+        <span class="spacer" style="flex:1"></span>
+        <span class="prov-stat"><b>{{ detected.length }}</b><span>journeys</span></span>
+        <span class="prov-stat warn"><b>\${{ sumUsd(detected) | number }}</b><span>at-risk</span></span>
+        <span class="prov-stat bad"><b>{{ countAlign(detected, 'no-test') }}</b><span>no-test</span></span>
+      </div>
+
+      <div class="jrn-row jrn-head">
+        <span>Journey</span><span>Criticality</span><span>Risk $</span><span>Source</span><span>Alignment</span><span></span>
+      </div>
+      <div class="jrn-row detected-row" *ngFor="let j of detected">
+        <input [(ngModel)]="j.name" placeholder="Journey name" />
+        <select [(ngModel)]="j.criticality"><option>low</option><option>medium</option><option>high</option></select>
+        <input type="number" [(ngModel)]="j.weightUsd" min="0" step="100" />
+        <input [(ngModel)]="j.source" placeholder="PROD-analytics" />
+        <span class="align-cell" [ngClass]="j.alignment">{{ j.alignment === 'no-test' ? 'NO-TEST' : j.alignment }}</span>
+        <button class="primary" style="padding:6px 12px;font-size:12px" (click)="promote(j)" title="Promote to assured (logged)">Promote →</button>
+      </div>
+      <p class="empty-hint" *ngIf="!detected.length" style="margin:6px 0;font-size:13px">No detected journeys awaiting review.</p>
+    </ng-container>
 
     <div class="cfg-actions" style="margin-top:14px">
       <button class="secondary" (click)="addJourney()">+ Add journey</button>
       <button class="primary" (click)="saveJourneys()">Save journeys</button>
       <button class="ghost" (click)="resetJourneys()">Reset to sample</button>
       <span class="cfg-msg ok" *ngIf="jrnMsg">{{ jrnMsg }}</span>
+    </div>
+
+    <div class="prov-note">
+      <b>Why two groups.</b> Recorded journeys are observed artifacts; detected journeys are
+      <b>modelled</b> from analytics — higher business signal, lower certainty. Detected rows are a
+      candidate queue: <b>promote to assured</b> after review (logged), and their risk-$ is inferred
+      (traffic × value) and inspectable. The high-$ <b>NO-TEST</b> rows real users hit are the most
+      actionable coverage gaps on this page.
     </div>
   </div>
 
@@ -156,6 +221,7 @@ export class ConfigurationComponent implements OnInit {
 
   journeys: Journey[] = [];
   jrnMsg = '';
+  jrnFilter: 'all' | 'recorded' | 'detected' = 'all';
 
   multiplier = 1;
   usdPerPoint = 40;
@@ -181,13 +247,32 @@ export class ConfigurationComponent implements OnInit {
 
   ngOnInit(): void { this.load(); this.journeys = this.journeyStore.list(); }
 
+  get recorded(): Journey[] { return this.journeys.filter(j => j.provenance !== 'detected'); }
+  get detected(): Journey[] { return this.journeys.filter(j => j.provenance === 'detected'); }
+
+  sumUsd(list: Journey[]): number { return list.reduce((s, j) => s + (Number(j.weightUsd) || 0), 0); }
+  countAlign(list: Journey[], a: Journey['alignment']): number { return list.filter(j => j.alignment === a).length; }
+
   addJourney(): void {
+    // new rows default to the group currently in view (hand-authored when "all")
+    const provenance: Journey['provenance'] = this.jrnFilter === 'detected' ? 'detected' : 'recorded';
     this.journeys.push({
       id: 'j-' + Math.random().toString(36).slice(2, 8), name: '', criticality: 'medium',
-      weightUsd: 1000, source: 'hand-authored', alignment: 'no-test', confidence: 0,
+      weightUsd: 1000, source: provenance === 'detected' ? 'PROD-analytics' : 'hand-authored',
+      alignment: 'no-test', confidence: 0, provenance,
     });
   }
-  removeJourney(i: number): void { this.journeys.splice(i, 1); }
+  removeJourney(j: Journey): void {
+    const i = this.journeys.indexOf(j);
+    if (i >= 0) { this.journeys.splice(i, 1); }
+  }
+  /** Promote a detected (modelled) journey into the recorded/assured set after review. */
+  promote(j: Journey): void {
+    j.provenance = 'recorded';
+    this.saveJourneys();
+    this.jrnMsg = `Promoted "${j.name || 'journey'}" to assured — now tracked as recorded.`;
+    setTimeout(() => (this.jrnMsg = ''), 4000);
+  }
   saveJourneys(): void {
     this.journeyStore.save(this.journeys.filter(j => j.name.trim()));
     this.jrnMsg = 'Saved — reflected on Journey alignment & Coverage gaps.';
