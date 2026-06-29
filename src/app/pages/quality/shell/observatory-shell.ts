@@ -24,14 +24,19 @@ import { ThemeService } from '../../../services/theme.service';
         <span class="name">Meridian<small>Govern every test. Assure every system.</small></span>
       </a>
 
+      <!-- command center: the default landing / control surface -->
+      <nav class="nav-group">
+        <a class="nav-link" routerLink="/quality" routerLinkActive="active"
+           [routerLinkActiveOptions]="{ exact: true }"><span class="ico">⌘</span> Command Center</a>
+      </nav>
+
       <!-- group 1: Automation Quality Governance -->
       <div class="nav-group-head" (click)="g1 = !g1" [class.open]="g1">
         <span class="gico">◆</span> Automation Quality Governance <span class="chev">⌄</span>
       </div>
       <nav class="nav-group" *ngIf="g1">
         <div class="persona-label">Architect / Lead</div>
-        <a class="nav-link" routerLink="/quality" routerLinkActive="active"
-           [routerLinkActiveOptions]="{ exact: true }"><span class="ico">◎</span> Intelligent Maintenance</a>
+        <a class="nav-link" routerLink="/quality/fleet" routerLinkActive="active"><span class="ico">◎</span> Intelligent Maintenance</a>
         <a class="nav-link" routerLink="/quality/queue" routerLinkActive="active">
           <span class="ico">✓</span> Approval queue</a>
         <div class="persona-label">Exec leadership</div>

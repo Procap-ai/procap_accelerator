@@ -9,6 +9,7 @@ import { CodeLabComponent } from './pages/samples/code-lab/code-lab';
 import { VisualSearchComponent } from './pages/samples/visual-search/visual-search';
 import { ObservatoryShellComponent } from './pages/quality/shell/observatory-shell';
 import { QualityComponent } from './pages/quality/quality';
+import { CommandCenterComponent } from './pages/quality/command/command-center';
 import { QualitySessionComponent } from './pages/quality/session/quality-session';
 import { OptimizeComponent } from './pages/quality/optimize/optimize';
 import { QueueComponent } from './pages/quality/queue/queue';
@@ -31,7 +32,8 @@ export const routes: Routes = [
     path: 'quality',
     component: ObservatoryShellComponent,
     children: [
-      { path: '', component: QualityComponent },
+      { path: '', component: CommandCenterComponent },
+      { path: 'fleet', component: QualityComponent },
       { path: 'session/:id', component: QualitySessionComponent },
       { path: 'session/:id/optimize', component: OptimizeComponent },
       { path: 'queue', component: QueueComponent },
