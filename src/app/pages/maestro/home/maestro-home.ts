@@ -7,6 +7,7 @@ import { ApexAxisChartSeries } from 'ng-apexcharts';
 import {
   MaestroService, MaestroTarget, RunListItem, TargetKind, CreateTargetPayload, CoverageLevel,
 } from '../../../services/maestro.service';
+import { MaestroManagedStore } from '../../../services/maestro-managed.store';
 import { TrendLineComponent } from '../../../components/charts/trend-line';
 
 interface Dash {
@@ -26,6 +27,7 @@ interface Dash {
 export class MaestroHomeComponent implements OnInit {
   private readonly svc = inject(MaestroService);
   private readonly router = inject(Router);
+  private readonly managed = inject(MaestroManagedStore);
 
   targets: MaestroTarget[] = [];
   runs: RunListItem[] = [];
@@ -59,11 +61,16 @@ export class MaestroHomeComponent implements OnInit {
   refresh(): void {
     this.loading = true;
     this.svc.listTargets().subscribe({
-      next: ({ targets }) => { this.targets = targets; this.loading = false; this.computeDash(); },
+      // Only auto-managed repos (toggled on in Meridian's Agentic page) surface here.
+      next: ({ targets }) => {
+        this.targets = targets.filter(t => this.managed.isManaged(t.target_id));
+        this.loading = false; this.computeDash();
+      },
       error: () => { this.loading = false; },
     });
     this.svc.listRuns().subscribe({ next: ({ runs }) => {
-      this.allRuns = runs; this.runs = runs.slice(0, 12); this.computeDash();
+      const scoped = runs.filter(r => this.managed.isManaged(r.target_id));
+      this.allRuns = scoped; this.runs = scoped.slice(0, 12); this.computeDash();
     } });
   }
 

@@ -49,8 +49,11 @@
 
 .ag-film { display: flex; gap: 8px; overflow-x: auto; }
 .ag-frame { flex: 0 0 100px; height: 62px; border-radius: 8px; border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--panel-3), var(--panel-2)); display: flex; align-items: flex-end; padding: 6px; }
-.ag-frame span { font-size: 11px; font-weight: 700; color: var(--text-2); }
+  background: linear-gradient(135deg, var(--panel-3), var(--panel-2)); background-size: cover; background-position: top center;
+  display: flex; align-items: flex-end; padding: 6px; position: relative; overflow: hidden; }
+.ag-frame span { font-size: 10px; font-weight: 700; color: #fff; position: relative; z-index: 1;
+  background: rgba(0,0,0,.55); padding: 1px 5px; border-radius: 4px; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ag-frame.fail { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); }
 .ag-frame.fail span { color: var(--bad); }
 
@@ -109,6 +112,26 @@
 .ag-open.sm { font-size: 11.5px; padding: 5px 10px; }
 .ag-repo-note { font-size: 11.5px; color: var(--muted); margin: 12px 0 0; line-height: 1.5; }
 .ag-repo-note code, .ag-repo-branch code { font-family: ui-monospace, monospace; }
+
+/* loading + add-repo form */
+.ag-loading { color: var(--muted); font-size: 13px; padding: 40px 0; text-align: center; }
+.ag-add { border: 1px solid var(--border-accent); border-radius: 10px; padding: 12px; margin-bottom: 14px;
+  background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.ag-add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ag-in { flex: 1 1 200px; min-width: 0; background: var(--panel); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 8px 11px; font-size: 12.5px; }
+.ag-in.sel { flex: 0 0 130px; text-transform: capitalize; }
+.ag-in:focus { outline: none; border-color: var(--accent); }
+.ag-err { color: var(--bad); font-size: 12px; margin: 8px 0 0; }
+.ag-link { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
+.ag-repo-empty { font-size: 12.5px; color: var(--muted); margin: 4px 0 0; }
+.ag-open.sm.solid { color: #04121c; }
+.ag-open[disabled] { opacity: .55; cursor: default; }
+.ag-repo-tests.ok { color: var(--accent); border-color: var(--border-accent); }
+.ag-repo-tests.bad { color: var(--bad); border-color: var(--bad); }
+.ag-repo-tests.busy { color: var(--warn); }
+.ag-evi a { font-size: 10.5px; color: var(--accent); text-decoration: none; background: var(--panel-3);
+  border: 1px solid var(--border); padding: 2px 7px; border-radius: 6px; }
 
 .ag-cta { text-align: center; padding: 34px 24px; }
 .ag-cta h2 { font-size: 17px; margin: 0 0 8px; }
