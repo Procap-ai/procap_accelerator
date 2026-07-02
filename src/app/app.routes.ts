@@ -18,6 +18,7 @@ import { SavingsComponent } from './pages/quality/savings/savings';
 import { GenomeComponent } from './pages/quality/genome/genome';
 import { ConfigurationComponent } from './pages/quality/config/configuration';
 import { AssuranceComponent } from './pages/quality/assurance/assurance';
+import { BusinessAssuranceGapsComponent } from './pages/quality/assurance-gaps/business-assurance-gaps';
 import { SuitePredictionComponent } from './pages/quality/prediction/suite-prediction';
 import { AgenticComponent } from './pages/quality/agentic/agentic';
 import { MaestroShellComponent } from './pages/maestro/shell/maestro-shell';
@@ -44,7 +45,8 @@ export const routes: Routes = [
       { path: 'savings', component: SavingsComponent },
       { path: 'genome/:id', component: GenomeComponent },
       { path: 'config', component: ConfigurationComponent },
-      { path: 'assurance', component: AssuranceComponent },
+      { path: 'assurance', component: BusinessAssuranceGapsComponent },
+      { path: 'assurance/coverage', component: AssuranceComponent },
       { path: 'suite-prediction', component: SuitePredictionComponent },
       { path: 'agentic', component: AgenticComponent },
     ],

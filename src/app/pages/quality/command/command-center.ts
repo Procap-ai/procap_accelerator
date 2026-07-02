@@ -338,7 +338,7 @@ export class CommandCenterComponent implements OnInit {
       ba.push({ n: pad(), title: `${fc.name} test gives false confidence`, badge: 'CRITICAL',
         meta: `test passes · ${fc.confidence}% trace-alignment confidence · marked Unaligned`,
         body: `The test is green but its behavioural trace never exercises the journey — exactly the false-confidence failure mode. A real regression here would ship undetected.`,
-        links: [{ label: 'Re-scaffold with trace', link: ['/quality/assurance'] }, { label: 'View drift', link: ['/quality/assurance'], query: { tab: 'ac' } }] });
+        links: [{ label: 'Re-scaffold with trace', link: ['/quality/assurance'] }, { label: 'View drift', link: ['/quality/assurance/coverage'], query: { tab: 'ac' } }] });
     }
     const detected = this.journeys.filter(j => j.provenance === 'detected');
     if (detected.length) {

@@ -53,9 +53,9 @@ import { ThemeService } from '../../../services/theme.service';
         <span class="gico">⛨</span> System &amp; Business Assurance <span class="chev">⌄</span>
       </div>
       <nav class="nav-group" *ngIf="g2">
-        <a class="nav-link" routerLink="/quality/assurance" routerLinkActive="active">
-          <span class="ico">◍</span> Coverage snapshot &amp; gaps</a>
-        <a class="nav-link" routerLink="/quality/assurance" [queryParams]="{ tab: 'ac' }" routerLinkActive="active">
+        <a class="nav-link" routerLink="/quality/assurance" routerLinkActive="active"
+           [routerLinkActiveOptions]="{ exact: true }"><span class="ico">◍</span> Business Assurance Gaps</a>
+        <a class="nav-link" routerLink="/quality/assurance/coverage" [queryParams]="{ tab: 'ac' }" routerLinkActive="active">
           <span class="ico">☑</span> AC criteria alignment</a>
         <a class="nav-link" routerLink="/quality/suite-prediction" routerLinkActive="active">
           <span class="ico">⤳</span> Intelligent Suite Prediction</a>
