@@ -57,6 +57,8 @@ import { ThemeService } from '../../../services/theme.service';
           <span class="ico">◍</span> Coverage snapshot &amp; gaps</a>
         <a class="nav-link" routerLink="/quality/assurance" [queryParams]="{ tab: 'ac' }" routerLinkActive="active">
           <span class="ico">☑</span> AC criteria alignment</a>
+        <a class="nav-link" routerLink="/quality/suite-prediction" routerLinkActive="active">
+          <span class="ico">⤳</span> Intelligent Suite Prediction</a>
       </nav>
 
       <!-- group 3: Governance -->
