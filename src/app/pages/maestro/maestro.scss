@@ -353,15 +353,16 @@ code { font-family: ui-monospace, monospace; }
   &.sel { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(56,189,248,.3); } }
 
 /* log + filmstrip */
-.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 12px;
+  > .card { min-width: 0; } }
 .log { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
   .row { font-size: 12.5px; color: var(--text-2); padding: 4px 6px; border-radius: 6px; line-height: 1.4;
     &.stage { color: var(--text); font-weight: 700; background: var(--panel-2); }
     &.pass { color: var(--good); } &.fail { color: var(--bad); } &.warn { color: var(--warn); } } }
 .strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;
-  figure { margin: 0; flex: 0 0 150px;
+  figure { margin: 0; flex: 0 0 150px; min-width: 0; max-width: 150px;
     img { width: 150px; height: 94px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); display: block; background: var(--panel-3); }
-    figcaption { font-size: 10.5px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    figcaption { max-width: 150px; font-size: 10.5px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       &.fail { color: var(--bad); } } } }
 
 /* tests */
