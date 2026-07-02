@@ -15,6 +15,7 @@
         <span class="badge stack" *ngIf="s.stack">{{ s.stack }}</span>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
+        <app-maestro-enable [repoUrl]="s.repo_url"></app-maestro-enable>
         <a *ngIf="isAnalyzed" class="ghost-link" [routerLink]="['/quality/genome', s.session_id]">Business view →</a>
         <a *ngIf="s.pr_url" class="pr-link" [href]="s.pr_url" target="_blank" rel="noopener">View PR ↗</a>
         <a *ngIf="isAnalyzed && !isActive(s.status)" class="primary" [routerLink]="['/quality/session', s.session_id, 'optimize']"

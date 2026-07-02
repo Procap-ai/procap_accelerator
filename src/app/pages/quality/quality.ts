@@ -7,6 +7,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { SparkComponent } from '../../components/charts/spark';
+import { MaestroEnableComponent } from '../../components/maestro-enable';
 import { FleetRepo, QualityService, QualitySession } from '../../services/quality.service';
 import { RepoStore, SavedRepo } from '../../services/repo-store';
 
@@ -15,7 +16,7 @@ interface Engineer { name: string; commits: number; }
 /** Fleet Observatory — fleet-wide quality roll-up + per-repo rows + engineer leaderboard. */
 @Component({
   selector: 'app-quality',
-  imports: [CommonModule, FormsModule, RouterModule, SparkComponent],
+  imports: [CommonModule, FormsModule, RouterModule, SparkComponent, MaestroEnableComponent],
   templateUrl: './quality.html',
   styleUrl: './quality.scss',
 })

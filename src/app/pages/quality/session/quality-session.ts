@@ -12,6 +12,7 @@ import {
 } from '../../../services/quality.service';
 import { RepoStore } from '../../../services/repo-store';
 import { SparkComponent } from '../../../components/charts/spark';
+import { MaestroEnableComponent } from '../../../components/maestro-enable';
 
 const ACTIVE_STATUSES = ['created', 'analyzing', 'working', 'opening_pr'];
 
@@ -19,7 +20,7 @@ const ACTIVE_STATUSES = ['created', 'analyzing', 'working', 'opening_pr'];
  *  "Take action & Optimize" page (session/:id/optimize) per AJ's email split. */
 @Component({
   selector: 'app-quality-session',
-  imports: [CommonModule, FormsModule, RouterModule, ScoreRingComponent, SparkComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ScoreRingComponent, SparkComponent, MaestroEnableComponent],
   templateUrl: './quality-session.html',
   styleUrl: '../quality.scss',
 })

@@ -8,6 +8,8 @@ import {
   CoverageLevel, CreateTargetPayload,
 } from '../../../services/maestro.service';
 import { MaestroManagedStore } from '../../../services/maestro-managed.store';
+import { MaestroEnableComponent } from '../../../components/maestro-enable';
+import { RepoStore, SavedRepo } from '../../../services/repo-store';
 
 /**
  * Meridian → Agentic Test Generation & Triage (powered by Maestro).
@@ -28,7 +30,7 @@ interface Frame { label: string; src: string; fail: boolean; }
 @Component({
   selector: 'app-agentic',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, MaestroEnableComponent],
   // Theme tokens (--bg/--panel/--accent/…) cascade from the ObservatoryShell's :host, so this page
   // only needs its own scoped styles — no need to inline the whole shared quality.scss.
   styleUrl: './agentic.scss',
@@ -57,6 +59,31 @@ interface Frame { label: string; src: string; fail: boolean; }
         Meridian doesn't run tests. Repos marked <strong>Auto-managed</strong> are surfaced in the
         <a routerLink="/maestro">Maestro</a> view, where they can be run on demand.
       </div>
+
+      <!-- connect a Meridian repo to Maestro -->
+      <section class="ag-card">
+        <div class="ag-card-head"><h2>Connect a repository to Maestro</h2>
+          <span class="ag-muted">from your Meridian fleet</span></div>
+        <ul class="ag-repos" *ngIf="meridianRepos.length">
+          <li class="ag-repo" *ngFor="let r of meridianRepos">
+            <span class="ag-repo-ico">📦</span>
+            <div class="ag-repo-body">
+              <div class="ag-repo-top">
+                <span class="ag-repo-name">{{ shortRepo(r.repoUrl) }}</span>
+                <span class="ag-repo-tests" *ngIf="r.tests != null">{{ r.tests }} tests</span>
+              </div>
+            </div>
+            <div class="ag-repo-acts">
+              <app-maestro-enable [repoUrl]="r.repoUrl"></app-maestro-enable>
+            </div>
+          </li>
+        </ul>
+        <p class="ag-repo-empty" *ngIf="!meridianRepos.length">No repositories in your Meridian fleet yet —
+          analyze one in <a routerLink="/quality/fleet">Intelligent Maintenance</a>, or add by URL below.</p>
+        <p class="ag-repo-note">Enabling is non-destructive: Maestro works on a new
+          <code>maestro/playwright</code> branch (your code untouched), converts existing tests to standard
+          Playwright, then runs, self-heals and triages on demand.</p>
+      </section>
 
       <!-- KPIs (real run history) -->
       <div class="ag-kpis" *ngIf="hasRuns">
@@ -191,8 +218,10 @@ interface Frame { label: string; src: string; fail: boolean; }
 export class AgenticComponent implements OnInit {
   private readonly svc = inject(MaestroService);
   private readonly managed = inject(MaestroManagedStore);
+  private readonly repoStore = inject(RepoStore);
 
   loading = true;
+  meridianRepos: SavedRepo[] = [];
   targets: MaestroTarget[] = [];
   repos: MaestroTarget[] = [];
   allRuns: RunListItem[] = [];
@@ -217,7 +246,11 @@ export class AgenticComponent implements OnInit {
   submitting = false;
   formError = '';
 
-  ngOnInit(): void { this.refresh(); }
+  ngOnInit(): void { this.meridianRepos = this.repoStore.list(); this.refresh(); }
+
+  shortRepo(url: string): string {
+    return (url || '').replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '');
+  }
 
   isManaged(t: MaestroTarget): boolean { return this.managed.isManaged(t.target_id); }
   toggleManaged(t: MaestroTarget): void { this.managed.toggle(t.target_id); }
