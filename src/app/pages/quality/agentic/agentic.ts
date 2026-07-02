@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import {
-  MaestroService, MaestroTarget, RunListItem, MaestroRun, TestCandidate, Bug,
+  MaestroService, MaestroTarget, RunListItem, MaestroRun, Bug,
   CoverageLevel, CreateTargetPayload,
 } from '../../../services/maestro.service';
 import { MaestroManagedStore } from '../../../services/maestro-managed.store';
@@ -162,47 +162,24 @@ interface Frame { label: string; src: string; fail: boolean; }
         </div>
       </section>
 
-      <div class="ag-grid" *ngIf="candidates.length || bugs.length">
-        <!-- ranked candidates -->
-        <section class="ag-card" *ngIf="candidates.length">
-          <div class="ag-card-head"><h2>Ranked test candidates</h2>
-            <span class="ag-muted">{{ focus?.name }}</span></div>
-          <ul class="ag-cands">
-            <li class="ag-cand" *ngFor="let c of candidates" [class.below]="c.enabled === false">
-              <div class="ag-cand-top">
-                <span class="ag-tier" [ngClass]="'tier-' + (c.tier || 'standard')">{{ c.tier || 'ranked' }}</span>
-                <span class="ag-cand-title">{{ c.title }}</span>
-                <span class="ag-cand-area" *ngIf="c.area">{{ c.area }}</span>
-              </div>
-              <div class="ag-meter"><span class="ml">value</span>
-                <span class="bar"><span class="fill score" [style.width.%]="c.score"></span></span>
-                <span class="mv">{{ c.score }}</span></div>
-              <div class="ag-meter"><span class="ml">confidence</span>
-                <span class="bar"><span class="fill conf" [style.width.%]="c.confidence"></span></span>
-                <span class="mv">{{ c.confidence }}</span></div>
-            </li>
-          </ul>
-        </section>
-
-        <!-- triaged bugs -->
-        <section class="ag-card" *ngIf="bugs.length">
-          <div class="ag-card-head"><h2>Triaged bugs</h2><span class="ag-muted">real defects only</span></div>
-          <ul class="ag-bugs">
-            <li class="ag-bug" *ngFor="let b of bugs">
-              <div class="ag-bug-top">
-                <span class="ag-sev" [ngClass]="'sev-' + (b.severity || 'medium')">{{ b.severity || 'bug' }}</span>
-                <span class="ag-bug-title">{{ b.title }}</span>
-                <span class="ag-bug-page" *ngIf="b.page">{{ b.page }}</span>
-              </div>
-              <p class="ag-bug-line" *ngIf="b.expected"><span class="k">Expected</span>{{ b.expected }}</p>
-              <p class="ag-bug-line" *ngIf="b.actual"><span class="k">Actual</span>{{ b.actual }}</p>
-              <div class="ag-evi" *ngIf="focusRun && b.evidence_capture">
-                <a [href]="cap(focusRun.run_id, b.evidence_capture)" target="_blank">▶ screenshot</a>
-              </div>
-            </li>
-          </ul>
-        </section>
-      </div>
+      <!-- triaged bugs -->
+      <section class="ag-card" *ngIf="bugs.length">
+        <div class="ag-card-head"><h2>Triaged bugs</h2><span class="ag-muted">real defects only</span></div>
+        <ul class="ag-bugs">
+          <li class="ag-bug" *ngFor="let b of bugs">
+            <div class="ag-bug-top">
+              <span class="ag-sev" [ngClass]="'sev-' + (b.severity || 'medium')">{{ b.severity || 'bug' }}</span>
+              <span class="ag-bug-title">{{ b.title }}</span>
+              <span class="ag-bug-page" *ngIf="b.page">{{ b.page }}</span>
+            </div>
+            <p class="ag-bug-line" *ngIf="b.expected"><span class="k">Expected</span>{{ b.expected }}</p>
+            <p class="ag-bug-line" *ngIf="b.actual"><span class="k">Actual</span>{{ b.actual }}</p>
+            <div class="ag-evi" *ngIf="focusRun && b.evidence_capture">
+              <a [href]="cap(focusRun.run_id, b.evidence_capture)" target="_blank">▶ screenshot</a>
+            </div>
+          </li>
+        </ul>
+      </section>
 
       <!-- empty state: no repos and no runs at all -->
       <section class="ag-card ag-cta" *ngIf="!repos.length && !hasRuns">
@@ -234,7 +211,6 @@ export class AgenticComponent implements OnInit {
   focusRun: MaestroRun | null = null;
   stages: Stage[] = [];
   filmstrip: Frame[] = [];
-  candidates: TestCandidate[] = [];
   bugs: Bug[] = [];
 
   // add-repo form
@@ -297,12 +273,7 @@ export class AgenticComponent implements OnInit {
   }
 
   private loadFocus(targetId: string, runId: string): void {
-    this.svc.getTarget(targetId).subscribe({
-      next: t => {
-        this.focus = t;
-        this.candidates = [...(t.candidates ?? [])].sort((a, b) => b.score - a.score).slice(0, 6);
-      },
-    });
+    this.svc.getTarget(targetId).subscribe({ next: t => { this.focus = t; } });
     this.svc.getRun(runId).subscribe({
       next: r => {
         this.focusRun = r;
