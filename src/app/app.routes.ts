@@ -18,9 +18,11 @@ import { SavingsComponent } from './pages/quality/savings/savings';
 import { GenomeComponent } from './pages/quality/genome/genome';
 import { ConfigurationComponent } from './pages/quality/config/configuration';
 import { AssuranceComponent } from './pages/quality/assurance/assurance';
-import { AutopilotComponent } from './pages/autopilot/autopilot';
-import { AutopilotTargetComponent } from './pages/autopilot/target/autopilot-target';
-import { AutopilotRunComponent } from './pages/autopilot/run/autopilot-run';
+import { AgenticComponent } from './pages/quality/agentic/agentic';
+import { MaestroShellComponent } from './pages/maestro/shell/maestro-shell';
+import { MaestroHomeComponent } from './pages/maestro/home/maestro-home';
+import { MaestroTargetComponent } from './pages/maestro/target/maestro-target';
+import { MaestroRunComponent } from './pages/maestro/run/maestro-run';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -42,12 +44,19 @@ export const routes: Routes = [
       { path: 'genome/:id', component: GenomeComponent },
       { path: 'config', component: ConfigurationComponent },
       { path: 'assurance', component: AssuranceComponent },
+      { path: 'agentic', component: AgenticComponent },
     ],
   },
-  // Autopilot — on-demand cloud test runs (intentionally NOT linked from the home page)
-  { path: 'autopilot', component: AutopilotComponent },
-  { path: 'autopilot/target/:id', component: AutopilotTargetComponent },
-  { path: 'autopilot/run/:id', component: AutopilotRunComponent },
+  // Maestro — on-demand cloud test runs (intentionally NOT linked from the home page)
+  {
+    path: 'maestro',
+    component: MaestroShellComponent,
+    children: [
+      { path: '', component: MaestroHomeComponent },
+      { path: 'target/:id', component: MaestroTargetComponent },
+      { path: 'run/:id', component: MaestroRunComponent },
+    ],
+  },
   // Sample projects (not linked from the home page)
   { path: 'samples/code-lab', component: CodeLabComponent },
   { path: 'samples/visual-search', component: VisualSearchComponent },

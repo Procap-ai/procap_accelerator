@@ -4,22 +4,23 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Subscription, timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
-import { AutopilotService, AutopilotRun, ProgressEntry, Bug, TestResult } from '../../../services/autopilot.service';
+import { MaestroService, MaestroRun, ProgressEntry, Bug, TestResult } from '../../../services/maestro.service';
 
 interface Stage { id: string; label: string; icon: string; }
 
 @Component({
-  selector: 'app-autopilot-run',
+  selector: 'app-maestro-run',
+  standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './autopilot-run.html',
-  styleUrl: './autopilot-run.scss',
+  templateUrl: './maestro-run.html',
+  styleUrl: '../maestro.scss',
 })
-export class AutopilotRunComponent implements OnInit, OnDestroy {
+export class MaestroRunComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
-  private readonly svc = inject(AutopilotService);
+  private readonly svc = inject(MaestroService);
 
   runId = '';
-  run: AutopilotRun | null = null;
+  run: MaestroRun | null = null;
   loading = true;
   errorMessage = '';
   logOpen = true;
@@ -45,6 +46,8 @@ export class AutopilotRunComponent implements OnInit, OnDestroy {
     { id: 'running', label: 'Run', icon: '▶️' },
     { id: 'triaging', label: 'Triage', icon: '🔎' },
   ];
+  private readonly convertStage: Stage = { id: 'converting', label: 'Convert', icon: '🔁' };
+  private readonly healStage: Stage = { id: 'healing', label: 'Self-heal', icon: '🩹' };
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -64,26 +67,62 @@ export class AutopilotRunComponent implements OnInit, OnDestroy {
       });
   }
 
-  // the self-heal stage only exists on runs that actually had failures to heal — inject it
-  // (after Run, before Triage) when healing is happening or happened, so green runs stay clean.
-  private readonly healStage: Stage = { id: 'healing', label: 'Self-heal', icon: '🩹' };
+  /** Build the pipeline for this run: base stages by kind/mode, plus optional Convert (repo, only when a
+   *  conversion actually happened) and Self-heal (only when healing happened/happening) stages injected
+   *  in the right position — so a plain green run stays clean. */
   get stages(): Stage[] {
-    const base = this.run?.kind === 'repo' ? this.repoStages
-      : this.run?.mode === 'reuse' ? this.reuseStages : this.websiteStages;
-    const showHeal = this.run?.status === 'healing' || this.healed > 0;
-    if (!showHeal) return base;
-    const i = base.findIndex(s => s.id === 'triaging');
-    return i < 0 ? base : [...base.slice(0, i), this.healStage, ...base.slice(i)];
+    let base: Stage[] = this.run?.kind === 'repo' ? [...this.repoStages]
+      : this.run?.mode === 'reuse' ? [...this.reuseStages] : [...this.websiteStages];
+    // Convert: repo runs that detected & converted a non-Playwright (Selenium) suite
+    if (this.run?.kind === 'repo' && this.showConvert) {
+      const i = base.findIndex(s => s.id === 'installing');
+      base = i < 0 ? base : [...base.slice(0, i), this.convertStage, ...base.slice(i)];
+    }
+    // Self-heal: only when a heal pass ran (or is running)
+    if (this.run?.status === 'healing' || this.healed > 0) {
+      const i = base.findIndex(s => s.id === 'triaging');
+      if (i >= 0) base = [...base.slice(0, i), this.healStage, ...base.slice(i)];
+    }
+    return base;
+  }
+  get showConvert(): boolean {
+    return this.run?.status === 'converting' || !!this.run?.converted_branch || !!this.run?.source_framework;
   }
   get isReuse(): boolean { return this.run?.mode === 'reuse'; }
   get isRunning(): boolean { return !!this.run && !['done', 'failed'].includes(this.run.status); }
   get isDone(): boolean { return this.run?.status === 'done'; }
   get isFailed(): boolean { return this.run?.status === 'failed'; }
 
-  private readonly order = ['queued', 'cloning', 'exploring', 'generating', 'installing', 'running', 'healing', 'triaging', 'done'];
-  stageState(stageId: string): 'pending' | 'active' | 'done' {
+  private readonly order = ['queued', 'cloning', 'converting', 'exploring', 'generating', 'installing',
+    'running', 'healing', 'triaging', 'done'];
+
+  // Progress "stage" titles → pipeline stage id, so a FAILED run (status collapses to "failed") can
+  // still show how far it got: we recover the furthest stage reached from the streamed stage events.
+  private readonly stageTitleMap: Record<string, string> = {
+    clone: 'cloning', convert: 'converting', explore: 'exploring', plan: 'generating',
+    generate: 'generating', install: 'installing', suite: 'installing', run: 'running',
+    'self-heal': 'healing', heal: 'healing', triage: 'triaging',
+  };
+  private failedStageId(): string {
+    let reached = '';
+    for (const e of this.run?.progress ?? []) {
+      if (e.type !== 'stage') continue;
+      const id = this.stageTitleMap[(e.title || '').trim().toLowerCase()];
+      if (id) reached = id;
+    }
+    return reached;
+  }
+
+  stageState(stageId: string): 'pending' | 'active' | 'done' | 'failed' {
     if (!this.run) return 'pending';
-    if (this.run.status === 'failed') return 'pending';
+    if (this.run.status === 'failed') {
+      const failed = this.failedStageId();
+      if (!failed) return 'pending';
+      const fi = this.order.indexOf(failed), at = this.order.indexOf(stageId);
+      if (at < fi) return 'done';
+      if (at === fi) return 'failed';
+      return 'pending';
+    }
     const cur = this.order.indexOf(this.run.status);
     const at = this.order.indexOf(stageId);
     if (this.isDone || cur > at) return 'done';

@@ -5,9 +5,9 @@ import { Router, RouterModule } from '@angular/router';
 import { ApexAxisChartSeries } from 'ng-apexcharts';
 
 import {
-  AutopilotService, AutopilotTarget, RunListItem, TargetKind, CreateTargetPayload, CoverageLevel,
-} from '../../services/autopilot.service';
-import { TrendLineComponent } from '../../components/charts/trend-line';
+  MaestroService, MaestroTarget, RunListItem, TargetKind, CreateTargetPayload, CoverageLevel,
+} from '../../../services/maestro.service';
+import { TrendLineComponent } from '../../../components/charts/trend-line';
 
 interface Dash {
   targets: number; runs: number; passRate: number; testsRun: number;
@@ -17,16 +17,17 @@ interface Dash {
 }
 
 @Component({
-  selector: 'app-autopilot',
+  selector: 'app-maestro-home',
+  standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, TrendLineComponent],
-  templateUrl: './autopilot.html',
-  styleUrl: './autopilot.scss',
+  templateUrl: './maestro-home.html',
+  styleUrl: '../maestro.scss',
 })
-export class AutopilotComponent implements OnInit {
-  private readonly svc = inject(AutopilotService);
+export class MaestroHomeComponent implements OnInit {
+  private readonly svc = inject(MaestroService);
   private readonly router = inject(Router);
 
-  targets: AutopilotTarget[] = [];
+  targets: MaestroTarget[] = [];
   runs: RunListItem[] = [];
   allRuns: RunListItem[] = [];
   dash: Dash | null = null;
@@ -144,10 +145,10 @@ export class AutopilotComponent implements OnInit {
     this.advOpen = false; this.depth = 2; this.maxPages = 12; this.instructions = '';
   }
 
-  runNow(t: AutopilotTarget): void {
+  runNow(t: MaestroTarget): void {
     this.runningTargetId = t.target_id;
     this.svc.createRun(t.target_id).subscribe({
-      next: ({ run_id }) => { this.runningTargetId = ''; void this.router.navigate(['/autopilot/run', run_id]); },
+      next: ({ run_id }) => { this.runningTargetId = ''; void this.router.navigate(['/maestro/run', run_id]); },
       error: (err: unknown) => {
         this.runningTargetId = '';
         alert((err as { error?: { error?: string } })?.error?.error ?? 'Could not start run.');
@@ -155,7 +156,7 @@ export class AutopilotComponent implements OnInit {
     });
   }
 
-  remove(t: AutopilotTarget): void {
+  remove(t: MaestroTarget): void {
     if (!confirm(`Delete target "${t.name}"? Its credentials will be removed.`)) return;
     this.svc.deleteTarget(t.target_id).subscribe({ next: () => this.refresh() });
   }

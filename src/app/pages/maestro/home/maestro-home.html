@@ -1,0 +1,188 @@
+<header class="page-head">
+  <div>
+    <div class="eyebrow">Maestro</div>
+    <h1>Targets &amp; runs</h1>
+    <p class="sub">Add a website or GitHub repo, then run a cloud test on demand — Maestro explores,
+      generates a Playwright suite, runs it, self-heals flaky tests and surfaces the real bugs.</p>
+  </div>
+  <button class="btn primary" (click)="toggleForm()">{{ showForm ? 'Close' : '+ Add target' }}</button>
+</header>
+
+<div class="home-grid">
+  <main class="home-main">
+
+    <!-- ── add-target form ── -->
+    @if (showForm) {
+      <section class="card form">
+        <div class="seg">
+          <button [class.active]="kind === 'website'" (click)="setKind('website')">🌐 Website</button>
+          <button [class.active]="kind === 'repo'" (click)="setKind('repo')">📦 GitHub repo</button>
+        </div>
+
+        <label class="fld">
+          <span>Name <em>(optional)</em></span>
+          <input [(ngModel)]="name" placeholder="e.g. Loka AI staging" />
+        </label>
+
+        @if (kind === 'website') {
+          <label class="fld">
+            <span>Website URL</span>
+            <input [(ngModel)]="siteUrl" placeholder="https://staging.example.com" />
+          </label>
+          <div class="fld">
+            <span>Coverage <em>(start minimal — fewer, deeper tests)</em></span>
+            <div class="cov-seg">
+              <button type="button" [class.active]="coverage === 'minimal'" (click)="coverage = 'minimal'">Minimal</button>
+              <button type="button" [class.active]="coverage === 'critical'" (click)="coverage = 'critical'">Critical</button>
+              <button type="button" [class.active]="coverage === 'standard'" (click)="coverage = 'standard'">Standard</button>
+              <button type="button" [class.active]="coverage === 'deep'" (click)="coverage = 'deep'">Deep</button>
+            </div>
+            <p class="hint">Minimal = one test that checks every page is reachable. You can change this and curate tests later.</p>
+          </div>
+          <button type="button" class="adv-toggle" (click)="advOpen = !advOpen">
+            {{ advOpen ? '▲' : '▼' }} Advanced — crawl depth, page budget &amp; instructions
+          </button>
+          @if (advOpen) {
+            <div class="adv-grid">
+              <label class="fld"><span>Crawl depth <em>(1–2)</em></span><input type="number" min="1" max="2" [(ngModel)]="depth" /></label>
+              <label class="fld"><span>Max pages <em>(1–15)</em></span><input type="number" min="1" max="15" [(ngModel)]="maxPages" /></label>
+            </div>
+            <label class="fld">
+              <span>Instructions to the agent <em>(optional)</em></span>
+              <textarea rows="2" [(ngModel)]="instructions" placeholder="e.g. Focus on the contact form. Don't test external links."></textarea>
+            </label>
+            <p class="hint">Depth &amp; pages are capped to keep even large sites cheap. The planner applies valid, safe guidance.</p>
+          }
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="withCreds" />
+            <span>This site needs a login</span>
+          </label>
+          @if (withCreds) {
+            <div class="creds">
+              <label class="fld"><span>Username / email</span><input [(ngModel)]="username" autocomplete="off" /></label>
+              <label class="fld"><span>Password</span><input type="password" [(ngModel)]="password" autocomplete="new-password" /></label>
+              <label class="fld"><span>Login URL <em>(optional)</em></span><input [(ngModel)]="loginUrl" placeholder="https://example.com/login" /></label>
+              <p class="hint">🔒 Stored encrypted server-side (SSM SecureString) — never shown again, never in the browser.</p>
+            </div>
+          }
+        } @else {
+          <label class="fld">
+            <span>GitHub repo URL</span>
+            <input [(ngModel)]="repoUrl" placeholder="https://github.com/owner/repo" />
+          </label>
+          <label class="fld">
+            <span>Access token <em>(private repos, or to push the converted branch)</em></span>
+            <input type="password" [(ngModel)]="githubToken" autocomplete="new-password" placeholder="ghp_…" />
+          </label>
+          <p class="hint">Selenium repos are auto-converted to standard Playwright on a
+            <code>maestro/playwright</code> branch — your original branch is never touched.</p>
+        }
+
+        @if (formError) { <p class="err">{{ formError }}</p> }
+        <div class="actions">
+          <button class="btn" (click)="resetForm()">Cancel</button>
+          <button class="btn primary" [disabled]="submitting" (click)="addTarget()">{{ submitting ? 'Adding…' : 'Add target' }}</button>
+        </div>
+      </section>
+    }
+
+    <!-- ── targets ── -->
+    <section class="block">
+      <h2>Targets @if (targets.length) { <span class="count">{{ targets.length }}</span> }</h2>
+      @if (loading) {
+        <p class="muted">Loading…</p>
+      } @else if (targets.length === 0) {
+        <div class="empty">No targets yet. Add a website or repo to run your first cloud test.</div>
+      } @else {
+        <div class="grid">
+          @for (t of targets; track t.target_id) {
+            <div class="card target">
+              <div class="t-top">
+                <span class="kind" [class.repo]="t.kind === 'repo'">{{ t.kind === 'repo' ? '📦 Repo' : '🌐 Website' }}</span>
+                @if (t.has_creds) { <span class="lock" title="Has stored credentials">🔒</span> }
+                @if (t.kind === 'website') { <span class="cov-chip">{{ t.coverage || 'minimal' }}</span> }
+                @if (t.last_run_status) { <span class="pill" [class]="statusClass(t.last_run_status)">{{ t.last_run_status }}</span> }
+              </div>
+              <a class="t-name" [routerLink]="['/maestro/target', t.target_id]">{{ t.name }}</a>
+              <div class="t-url">{{ t.site_url || t.repo_url }}</div>
+              @if (t.tests?.length) { <div class="t-meta">{{ t.tests?.length }} test(s) in suite</div> }
+              <div class="t-actions">
+                <button class="btn primary sm" [disabled]="runningTargetId === t.target_id" (click)="runNow(t)">
+                  {{ runningTargetId === t.target_id ? 'Starting…' : '▶ Run now' }}
+                </button>
+                <a class="btn sm" [routerLink]="['/maestro/target', t.target_id]">Manage</a>
+                <button class="btn ghost sm" (click)="remove(t)">Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- ── recent runs ── -->
+    @if (runs.length) {
+      <section class="block">
+        <h2>Recent runs</h2>
+        <div class="runs">
+          @for (r of runs; track r.run_id) {
+            <a class="run-row" [routerLink]="['/maestro/run', r.run_id]">
+              <span class="pill" [class]="statusClass(r.status)">{{ r.status }}</span>
+              <span class="r-name">{{ r.name }}</span>
+              @if (r.summary) {
+                <span class="r-sum">
+                  <em class="ok">{{ r.summary.passed }}✓</em>
+                  <em class="bad">{{ r.summary.failed }}✗</em>
+                  / {{ r.summary.total }}
+                </span>
+              }
+              @if (r.bugs_count) { <span class="r-bug">🐞 {{ r.bugs_count }}</span> }
+              <span class="r-ago">{{ ago(r.created_at) }}</span>
+            </a>
+          }
+        </div>
+      </section>
+    }
+
+  </main>
+
+  <!-- ── analytics dashboard (sidebar) ── -->
+  <aside class="home-side">
+    @if (dash && (dash.runs > 0 || dash.targets > 0)) {
+      <section class="card dash">
+        <div class="dash-head">
+          <h2>Quality dashboard</h2>
+          <span class="d-sub">{{ dash.targets }} target(s) · {{ dash.runs }} run(s)</span>
+        </div>
+
+        <div class="pass-hero">
+          <div class="ph-ring" [style.--p]="dash.passRate">
+            <span class="ph-num">{{ dash.passRate }}<small>%</small></span>
+          </div>
+          <div class="ph-l">Average pass rate</div>
+        </div>
+
+        <div class="dkpis">
+          <div class="dkpi"><div class="n">{{ dash.testsRun }}</div><div class="l">Tests run</div></div>
+          <div class="dkpi warn"><div class="n">{{ dash.bugsOpen }}</div><div class="l">Open bugs</div></div>
+          <div class="dkpi ok"><div class="n">{{ dash.bugsResolved }}</div><div class="l">Resolved</div></div>
+          <div class="dkpi violet"><div class="n">{{ dash.healed }}</div><div class="l">Auto-healed</div></div>
+        </div>
+
+        <div class="dchart">
+          <div class="dc-title">Pass rate over time</div>
+          @if (dash.hasTrend) {
+            <app-trend-line [series]="dash.passSeries" [categories]="dash.passCats"
+                            [colors]="['#38bdf8']" [height]="130" [yMax]="100" [suffix]="'%'"></app-trend-line>
+          } @else { <p class="dc-empty">Run a few suites to see trends.</p> }
+        </div>
+        <div class="dchart">
+          <div class="dc-title">Bugs found per run <span class="dc-hint">↓ better</span></div>
+          @if (dash.hasTrend) {
+            <app-trend-line [series]="dash.bugSeries" [categories]="dash.bugCats"
+                            [colors]="['#ef4444']" [height]="130"></app-trend-line>
+          } @else { <p class="dc-empty">Run a few suites to see trends.</p> }
+        </div>
+      </section>
+    }
+  </aside>
+</div>

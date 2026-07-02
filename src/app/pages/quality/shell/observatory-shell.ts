@@ -28,6 +28,8 @@ import { ThemeService } from '../../../services/theme.service';
       <nav class="nav-group">
         <a class="nav-link" routerLink="/quality" routerLinkActive="active"
            [routerLinkActiveOptions]="{ exact: true }"><span class="ico">⌘</span> Command Center</a>
+        <a class="nav-link" routerLink="/quality/agentic" routerLinkActive="active"
+           ><span class="ico">✦</span> Agentic Test Gen &amp; Triage</a>
       </nav>
 
       <!-- group 1: Automation Quality Governance -->

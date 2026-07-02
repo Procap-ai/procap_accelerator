@@ -4,27 +4,28 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import {
-  AutopilotService, AutopilotTarget, RunListItem, CoverageLevel, TargetTest,
+  MaestroService, MaestroTarget, RunListItem, CoverageLevel, TargetTest,
   TestCandidate, ProjectFile,
-} from '../../../services/autopilot.service';
+} from '../../../services/maestro.service';
 
 interface CoverageOpt { id: CoverageLevel; label: string; blurb: string; }
 
 const DEFAULT_BUDGET: Record<string, number> = { minimal: 1, critical: 3, standard: 6, deep: 10 };
 
 @Component({
-  selector: 'app-autopilot-target',
+  selector: 'app-maestro-target',
+  standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './autopilot-target.html',
-  styleUrl: './autopilot-target.scss',
+  templateUrl: './maestro-target.html',
+  styleUrl: '../maestro.scss',
 })
-export class AutopilotTargetComponent implements OnInit {
+export class MaestroTargetComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly svc = inject(AutopilotService);
+  private readonly svc = inject(MaestroService);
 
   targetId = '';
-  target: AutopilotTarget | null = null;
+  target: MaestroTarget | null = null;
   runs: RunListItem[] = [];
   loading = true;
   busy = false;
@@ -180,6 +181,13 @@ export class AutopilotTargetComponent implements OnInit {
   selectFile(f: ProjectFile): void { this.activeFile = f; }
   downloadUrl(): string { return this.svc.downloadUrl(this.targetId); }
 
+  /** GitHub URL for the converted feature branch (e.g. …/tree/maestro/playwright). */
+  branchUrl(): string {
+    const url = (this.target?.repo_url || '').replace(/\.git$/, '').replace(/\/$/, '');
+    const branch = this.target?.converted_branch || '';
+    return url && branch ? `${url}/tree/${branch}` : url;
+  }
+
   // ── curation / runs ───────────────────────────────────────────────────────────
   regenerate(): void {
     if (!confirm('Regenerate the test suite on the next run? Current generated tests will be replaced.')) return;
@@ -203,7 +211,7 @@ export class AutopilotTargetComponent implements OnInit {
         !confirm('Re-explore the site and regenerate the suite? This replaces the current generated tests.')) return;
     this.busy = true;
     this.svc.createRun(this.targetId, mode).subscribe({
-      next: ({ run_id }) => { this.busy = false; void this.router.navigate(['/autopilot/run', run_id]); },
+      next: ({ run_id }) => { this.busy = false; void this.router.navigate(['/maestro/run', run_id]); },
       error: (err: unknown) => {
         this.busy = false;
         alert((err as { error?: { error?: string } })?.error?.error ?? 'Could not start run.');

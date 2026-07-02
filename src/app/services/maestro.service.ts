@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+// NOTE: the product is "Maestro" but the deployed backend (AWS resources + API paths) stays
+// `procap-autopilot-*` / `/autopilot/*`. Only the Angular surface is named Maestro.
 export type TargetKind = 'repo' | 'website';
 export type CoverageLevel = 'minimal' | 'critical' | 'standard' | 'deep';
 export type RunMode = 'reuse' | 'regenerate';
@@ -38,7 +40,7 @@ export interface ProjectFile {
   truncated?: boolean;
 }
 
-export interface AutopilotTarget {
+export interface MaestroTarget {
   target_id: string;
   kind: TargetKind;
   name: string;
@@ -61,6 +63,10 @@ export interface AutopilotTarget {
   has_project?: boolean;
   tests?: TargetTest[];
   candidates?: TestCandidate[];
+  // repo Selenium→Playwright conversion (repo targets only)
+  source_framework?: string;      // e.g. "Selenium (standalone)" — the detected original stack
+  converted_branch?: string;      // e.g. "maestro/playwright" — pushed feature branch (empty if not pushed)
+  conversion_status?: string;     // "" | "converted" | "converted_local"
   last_run_id?: string;
   last_run_status?: string;
   created_at: number;
@@ -102,7 +108,7 @@ export interface Bug {
 export interface RunSummary { total: number; passed: number; failed: number; flaky?: number; }
 export interface RunArtifacts { videos?: string[]; traces?: string[]; report?: string | null; }
 
-export interface AutopilotRun {
+export interface MaestroRun {
   run_id: string;
   target_id: string;
   kind: TargetKind;
@@ -116,6 +122,8 @@ export interface AutopilotRun {
   summary?: RunSummary | null;
   artifacts?: RunArtifacts | null;
   healed?: number;
+  converted_branch?: string;   // set on repo runs that converted a suite to Playwright
+  source_framework?: string;
   error?: string;
   created_at: number;
   updated_at: number;
@@ -169,7 +177,7 @@ export interface TargetPatch {
 export interface ProjectFilesResult { files: ProjectFile[]; count: number; ready: boolean; }
 
 @Injectable({ providedIn: 'root' })
-export class AutopilotService {
+export class MaestroService {
   private readonly http = inject(HttpClient);
   readonly apiBase = 'https://api.procap.ai';
 
@@ -182,20 +190,20 @@ export class AutopilotService {
       `${this.apiBase}/autopilot/targets`, payload);
   }
 
-  listTargets(): Observable<{ targets: AutopilotTarget[] }> {
-    return this.http.get<{ targets: AutopilotTarget[] }>(`${this.apiBase}/autopilot/targets`);
+  listTargets(): Observable<{ targets: MaestroTarget[] }> {
+    return this.http.get<{ targets: MaestroTarget[] }>(`${this.apiBase}/autopilot/targets`);
   }
 
-  getTarget(id: string): Observable<AutopilotTarget> {
-    return this.http.get<AutopilotTarget>(`${this.apiBase}/autopilot/targets/${id}`);
+  getTarget(id: string): Observable<MaestroTarget> {
+    return this.http.get<MaestroTarget>(`${this.apiBase}/autopilot/targets/${id}`);
   }
 
   deleteTarget(id: string): Observable<{ deleted: boolean }> {
     return this.http.delete<{ deleted: boolean }>(`${this.apiBase}/autopilot/targets/${id}`);
   }
 
-  updateTarget(id: string, patch: TargetPatch): Observable<AutopilotTarget> {
-    return this.http.patch<AutopilotTarget>(`${this.apiBase}/autopilot/targets/${id}`, patch);
+  updateTarget(id: string, patch: TargetPatch): Observable<MaestroTarget> {
+    return this.http.patch<MaestroTarget>(`${this.apiBase}/autopilot/targets/${id}`, patch);
   }
 
   getProjectFiles(id: string): Observable<ProjectFilesResult> {
@@ -225,8 +233,8 @@ export class AutopilotService {
     return this.http.get<{ runs: RunListItem[] }>(`${this.apiBase}/autopilot/runs${q}`);
   }
 
-  getRun(id: string): Observable<AutopilotRun> {
-    return this.http.get<AutopilotRun>(`${this.apiBase}/autopilot/runs/${id}`);
+  getRun(id: string): Observable<MaestroRun> {
+    return this.http.get<MaestroRun>(`${this.apiBase}/autopilot/runs/${id}`);
   }
 
   captureUrl(runId: string, filename: string): string {
