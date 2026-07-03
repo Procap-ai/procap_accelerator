@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
-import { LandingComponent } from './pages/landing/landing';
+import { LoginComponent } from './pages/login/login';
+import { UtilsComponent } from './pages/utils/utils';
 import { PlaywrightConvertHomeComponent } from './pages/playwright-convert-home/playwright-convert-home';
 import { PlaywrightConvertJobComponent } from './pages/playwright-convert-job/playwright-convert-job';
 import { ConvertHomeComponent } from './pages/convert-home/convert-home';
@@ -25,16 +26,25 @@ import { MaestroShellComponent } from './pages/maestro/shell/maestro-shell';
 import { MaestroHomeComponent } from './pages/maestro/home/maestro-home';
 import { MaestroTargetComponent } from './pages/maestro/target/maestro-target';
 import { MaestroRunComponent } from './pages/maestro/run/maestro-run';
+import { authGuard, loginGuard } from './auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: LandingComponent },
-  { path: 'playwright-convert', component: PlaywrightConvertHomeComponent },
-  { path: 'playwright-convert/job/:id', component: PlaywrightConvertJobComponent },
-  { path: 'mabl-convert', component: ConvertHomeComponent },
-  { path: 'mabl-convert/job/:id', component: ConvertJobComponent },
+  // SSO login wall (Option A) — gates the whole app; APIs stay ungated.
+  { path: 'login', component: LoginComponent, canActivate: [loginGuard] },
+
+  // Home is now the Meridian quality workspace.
+  { path: '', redirectTo: 'quality', pathMatch: 'full' },
+
+  // Legacy migration converters — demoted to Utils, reached from the sidebar.
+  { path: 'utils', component: UtilsComponent, canActivate: [authGuard] },
+  { path: 'playwright-convert', component: PlaywrightConvertHomeComponent, canActivate: [authGuard] },
+  { path: 'playwright-convert/job/:id', component: PlaywrightConvertJobComponent, canActivate: [authGuard] },
+  { path: 'mabl-convert', component: ConvertHomeComponent, canActivate: [authGuard] },
+  { path: 'mabl-convert/job/:id', component: ConvertJobComponent, canActivate: [authGuard] },
   {
     path: 'quality',
     component: ObservatoryShellComponent,
+    canActivate: [authGuard],
     children: [
       { path: '', component: CommandCenterComponent },
       { path: 'fleet', component: QualityComponent },
@@ -55,6 +65,7 @@ export const routes: Routes = [
   {
     path: 'maestro',
     component: MaestroShellComponent,
+    canActivate: [authGuard],
     children: [
       { path: '', component: MaestroHomeComponent },
       { path: 'target/:id', component: MaestroTargetComponent },
@@ -62,7 +73,7 @@ export const routes: Routes = [
     ],
   },
   // Sample projects (not linked from the home page)
-  { path: 'samples/code-lab', component: CodeLabComponent },
-  { path: 'samples/visual-search', component: VisualSearchComponent },
+  { path: 'samples/code-lab', component: CodeLabComponent, canActivate: [authGuard] },
+  { path: 'samples/visual-search', component: VisualSearchComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: '' }
 ];

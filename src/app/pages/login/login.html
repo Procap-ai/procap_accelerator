@@ -1,0 +1,42 @@
+<div class="login">
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="https://procap.ai/" target="_blank" rel="noopener" class="nav-brand">
+        <img src="https://framerusercontent.com/images/O6vOCZlrgab4i9yukLuUTBWzZ3w.png" alt="Procap" class="nav-logo" />
+        <div class="nav-brand-text">
+          <span class="nav-name">Procap</span>
+          <span class="nav-tagline">Accelerator</span>
+        </div>
+      </a>
+      <a href="https://procap.ai/" target="_blank" rel="noopener" class="nav-site-link">procap.ai ↗</a>
+    </div>
+  </header>
+
+  <main class="hero">
+    <div class="card">
+      <div class="badge"><span class="badge-dot"></span> Procap Accelerator</div>
+      <h1 class="title">Welcome</h1>
+      <p class="sub">Sign in with your Procap work account to continue.</p>
+
+      @if (domainError()) {
+        <div class="error">{{ domainError() }} Please use your Procap account.</div>
+      }
+
+      <button class="btn-ms" (click)="signIn()">
+        <svg class="ms-logo" viewBox="0 0 23 23" aria-hidden="true">
+          <rect x="1" y="1" width="10" height="10" fill="#F25022" />
+          <rect x="12" y="1" width="10" height="10" fill="#7FBA00" />
+          <rect x="1" y="12" width="10" height="10" fill="#00A4EF" />
+          <rect x="12" y="12" width="10" height="10" fill="#FFB900" />
+        </svg>
+        Sign in with Microsoft
+      </button>
+
+      @if (nativeMode) {
+        <button class="btn-native" (click)="signInNative()">Continue with QA agent login →</button>
+      }
+
+      <p class="hint">Restricted to &#64;procap.ai accounts.</p>
+    </div>
+  </main>
+</div>

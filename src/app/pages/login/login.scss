@@ -1,0 +1,79 @@
+:host { display: block; min-height: 100vh; }
+
+.login {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.nav {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e0f2fe;
+}
+.nav-inner {
+  max-width: 900px; margin: 0 auto; padding: 0.85rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand { display: flex; align-items: center; gap: 0.65rem; text-decoration: none; }
+.nav-logo { height: 30px; width: auto; border-radius: 6px; }
+.nav-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.nav-name { font-size: 1rem; font-weight: 700; color: #1e293b; letter-spacing: -0.01em; }
+.nav-tagline { font-size: 0.63rem; font-weight: 700; color: #0ea5e9; text-transform: uppercase; letter-spacing: 0.07em; }
+.nav-site-link {
+  font-size: 0.8rem; font-weight: 600; color: #0ea5e9; text-decoration: none;
+  padding: 0.35rem 0.85rem; border: 1.5px solid #bae6fd; border-radius: 20px;
+  background: #f0f9ff; transition: all 0.15s;
+  &:hover { background: #e0f2fe; border-color: #7dd3fc; }
+}
+
+.hero {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 2.5rem 1.5rem;
+  background:
+    radial-gradient(ellipse at center 60%, rgba(191,219,254,0.5) 0%, rgba(224,242,254,0.35) 32%, rgba(255,255,255,0) 68%),
+    linear-gradient(180deg, #ffffff 0%, #f9fbff 45%, #f3f8ff 80%, #ffffff 100%);
+}
+
+.card {
+  width: 100%; max-width: 400px;
+  background: #fff; border: 1px solid #e0f2fe; border-radius: 18px;
+  padding: 2.25rem 2rem 2rem; text-align: center;
+  box-shadow: 0 10px 40px rgba(14,165,233,0.10);
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-size: 0.72rem; font-weight: 700; color: #0284c7;
+  background: #fff; border: 1.5px solid #bae6fd; border-radius: 20px;
+  padding: 0.3rem 0.9rem; margin-bottom: 1.25rem;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+.badge-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+.title { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem; letter-spacing: -0.02em; }
+.sub { font-size: 0.9rem; color: #64748b; margin: 0 0 1.5rem; }
+
+.error {
+  background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+  font-size: 0.82rem; border-radius: 10px; padding: 0.6rem 0.8rem; margin-bottom: 1rem;
+}
+
+.btn-ms {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+  width: 100%; padding: 0.75rem 1rem; font-size: 0.92rem; font-weight: 600;
+  color: #1e293b; background: #fff; border: 1.5px solid #d0d7e2; border-radius: 10px;
+  cursor: pointer; transition: all 0.15s;
+  &:hover { background: #f8fafc; border-color: #94a3b8; }
+}
+.ms-logo { width: 18px; height: 18px; }
+
+.btn-native {
+  display: block; width: 100%; margin-top: 0.75rem;
+  padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 600;
+  color: #0284c7; background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px;
+  cursor: pointer; transition: all 0.15s;
+  &:hover { background: #e0f2fe; }
+}
+
+.hint { font-size: 0.75rem; color: #94a3b8; margin: 1.1rem 0 0; }

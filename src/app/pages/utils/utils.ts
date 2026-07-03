@@ -10,13 +10,18 @@ interface PastRun {
   route: string;
 }
 
+/**
+ * Utils — the legacy test-migration converters (Selenium → Playwright,
+ * Selenium/Playwright → mabl). Deliberately kept off the main app; reached via
+ * the low-key "Utils" link in the Meridian sidebar.
+ */
 @Component({
-  selector: 'app-landing',
+  selector: 'app-utils',
   imports: [CommonModule, RouterModule],
-  templateUrl: './landing.html',
-  styleUrl: './landing.scss'
+  templateUrl: './utils.html',
+  styleUrl: './utils.scss',
 })
-export class LandingComponent implements OnInit {
+export class UtilsComponent implements OnInit {
   pastRuns: PastRun[] = [];
 
   constructor(private router: Router) {}

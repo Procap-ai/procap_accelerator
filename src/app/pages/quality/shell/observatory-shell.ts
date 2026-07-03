@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { ThemeService } from '../../../services/theme.service';
+import { AuthService } from '../../../auth.service';
 
 /** Persistent "Meridian" shell: branded header, collapsible persona-grouped sidebar, theme toggle. */
 @Component({
@@ -73,7 +74,14 @@ import { ThemeService } from '../../../services/theme.service';
           <span>{{ theme.theme() === 'dark' ? '☾ Dark' : '☀ Light' }}</span>
           <span class="switch" [class.on]="theme.theme() === 'light'"></span>
         </button>
-        <a class="nav-link" routerLink="/"><span class="ico">←</span> Back to home</a>
+        <!-- Low-key entry to the legacy migration converters. -->
+        <a class="nav-link muted" routerLink="/utils"><span class="ico">⚒</span> Utils</a>
+        @if (auth.email()) {
+          <div class="obs-user">
+            <span class="obs-user-email" [title]="auth.email()!">{{ auth.email() }}</span>
+            <button class="obs-signout" (click)="auth.logout()">Sign out</button>
+          </div>
+        }
       </div>
     </aside>
 
@@ -82,6 +90,7 @@ import { ThemeService } from '../../../services/theme.service';
 })
 export class ObservatoryShellComponent {
   readonly theme = inject(ThemeService);
+  readonly auth = inject(AuthService);
   g1 = true;
   g2 = true;
 }
