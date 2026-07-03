@@ -61,8 +61,12 @@
       }
       @for (m of chatMsgs; track $index) {
         <div class="msg {{ m.role }}">
-          @if (m.role === 'assistant') { <span class="avatar">✦</span> }
-          <div class="bubble">{{ m.content }}</div>
+          @if (m.role === 'assistant') {
+            <span class="avatar">✦</span>
+            <div class="bubble" [innerHTML]="renderReply(m.content)"></div>
+          } @else {
+            <div class="bubble">{{ m.content }}</div>
+          }
         </div>
       }
       @if (chatBusy) {

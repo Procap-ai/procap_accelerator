@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import {
@@ -23,6 +24,7 @@ export class MaestroTargetComponent implements OnInit, AfterViewChecked {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly svc = inject(MaestroService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   targetId = '';
   target: MaestroTarget | null = null;
@@ -97,6 +99,17 @@ export class MaestroTargetComponent implements OnInit, AfterViewChecked {
   get pendingEdits(): PendingEdit[] { return this.target?.pending_edits ?? []; }
 
   pendingIcon(a: string): string { return a === 'add' ? '＋' : a === 'delete' ? '－' : '✎'; }
+
+  /** Minimal, safe Markdown for assistant bubbles: escape HTML, then **bold** and `code`.
+   *  Newlines are preserved by the bubble's CSS (white-space: pre-wrap). */
+  renderReply(text: string): SafeHtml {
+    const esc = (text || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const html = esc
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+?)`/g, '<code>$1</code>');
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
 
   onChatKey(e: KeyboardEvent): void {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendChat(); }
