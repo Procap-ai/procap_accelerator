@@ -265,7 +265,7 @@
 
     <div class="chat-input">
       <textarea rows="1" [(ngModel)]="chatInput" (keydown)="onChatKey($event)" [disabled]="chatBusy"
-        placeholder="Ask to add / edit / remove a test…  (Enter to send)"></textarea>
+        placeholder="Message Maestro…"></textarea>
       <button class="btn primary" [disabled]="chatBusy || !chatInput.trim()" (click)="sendChat()">Send</button>
     </div>
   </aside>
