@@ -8,6 +8,7 @@ import { catchError } from 'rxjs/operators';
 import { FleetRepo, QualityService, QualitySession } from '../../../services/quality.service';
 import { RepoStore, SavedRepo } from '../../../services/repo-store';
 import { Journey, JourneyStore } from '../../../services/journey-store';
+import { AuthService } from '../../../auth.service';
 
 type Badge = 'CRITICAL' | 'HIGH LEVERAGE' | 'NEEDS DECISION';
 interface Act { n: string; title: string; badge: Badge; meta: string; body: string;
@@ -150,6 +151,7 @@ export class CommandCenterComponent implements OnInit {
   private readonly store = inject(RepoStore);
   private readonly journeyStore = inject(JourneyStore);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   repos: SavedRepo[] = [];
   journeys: Journey[] = [];
@@ -249,7 +251,18 @@ export class CommandCenterComponent implements OnInit {
     const h = new Date().getHours();
     return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
   }
-  readonly firstName = 'AJ';
+  /** First name of the signed-in user (from the SSO profile), falling back to
+   *  the email local-part, then a neutral greeting. */
+  get firstName(): string {
+    const name = this.auth.name()?.trim();
+    if (name) return name.split(/\s+/)[0];
+    const email = this.auth.email();
+    if (email) {
+      const first = email.split('@')[0].split(/[._-]/)[0];
+      if (first) return first.charAt(0).toUpperCase() + first.slice(1);
+    }
+    return 'there';
+  }
   get today(): string {
     return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   }
