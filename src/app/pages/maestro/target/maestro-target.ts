@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import {
   MaestroService, MaestroTarget, RunListItem, CoverageLevel, TargetTest,
-  TestCandidate, ProjectFile,
+  TestCandidate, ProjectFile, ChatMessage, PendingEdit,
 } from '../../../services/maestro.service';
 
 interface CoverageOpt { id: CoverageLevel; label: string; blurb: string; }
@@ -19,7 +19,7 @@ const DEFAULT_BUDGET: Record<string, number> = { minimal: 1, critical: 3, standa
   templateUrl: './maestro-target.html',
   styleUrl: '../maestro.scss',
 })
-export class MaestroTargetComponent implements OnInit {
+export class MaestroTargetComponent implements OnInit, AfterViewChecked {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly svc = inject(MaestroService);
@@ -29,6 +29,20 @@ export class MaestroTargetComponent implements OnInit {
   runs: RunListItem[] = [];
   loading = true;
   busy = false;
+
+  // ── chat ────────────────────────────────────────────────────────────────────
+  @ViewChild('chatLog') private chatLog?: ElementRef<HTMLElement>;
+  chatMsgs: ChatMessage[] = [];
+  chatInput = '';
+  chatBusy = false;
+  chatError = '';
+  private chatShouldScroll = false;
+  readonly chatSuggestions = [
+    'What tests do I have?',
+    'Add a test for the login flow',
+    'Make the search test also assert the result count',
+    'Set coverage to standard',
+  ];
 
   // advanced options (editable form, seeded from target)
   advOpen = false;
@@ -69,6 +83,45 @@ export class MaestroTargetComponent implements OnInit {
       error: () => { this.loading = false; },
     });
     this.svc.listRuns(this.targetId).subscribe({ next: ({ runs }) => { this.runs = runs.slice(0, 10); } });
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.chatShouldScroll && this.chatLog) {
+      const el = this.chatLog.nativeElement;
+      el.scrollTop = el.scrollHeight;
+      this.chatShouldScroll = false;
+    }
+  }
+
+  // ── chat ────────────────────────────────────────────────────────────────────
+  get pendingEdits(): PendingEdit[] { return this.target?.pending_edits ?? []; }
+
+  pendingIcon(a: string): string { return a === 'add' ? '＋' : a === 'delete' ? '－' : '✎'; }
+
+  onChatKey(e: KeyboardEvent): void {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendChat(); }
+  }
+
+  sendChat(text?: string): void {
+    const content = (text ?? this.chatInput).trim();
+    if (!content || this.chatBusy) return;
+    this.chatError = '';
+    this.chatMsgs.push({ role: 'user', content });
+    this.chatInput = '';
+    this.chatBusy = true;
+    this.chatShouldScroll = true;
+    this.svc.chat(this.targetId, this.chatMsgs).subscribe({
+      next: ({ reply, target }) => {
+        this.chatMsgs.push({ role: 'assistant', content: reply || '(no reply)' });
+        if (target) { this.target = target; }   // reflect queued edits / settings live
+        this.chatBusy = false;
+        this.chatShouldScroll = true;
+      },
+      error: (err: unknown) => {
+        this.chatBusy = false;
+        this.chatError = (err as { error?: { error?: string } })?.error?.error ?? 'Chat failed — please try again.';
+      },
+    });
   }
 
   // ── coverage ────────────────────────────────────────────────────────────────

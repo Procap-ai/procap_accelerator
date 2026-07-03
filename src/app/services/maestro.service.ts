@@ -18,6 +18,21 @@ export interface TargetTest {
   enabled: boolean;
 }
 
+/** A test change queued by the chat that the NEXT run applies (then clears). */
+export interface PendingEdit {
+  id: string;
+  action: 'add' | 'edit' | 'delete';
+  test_id?: string;
+  details: string;
+  added_at?: number;
+}
+
+/** One turn of the Maestro chat conversation. */
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 /** A ranked test candidate from the planning phase — powers the coverage dashboard + heat map. */
 export interface TestCandidate {
   id: string;
@@ -63,6 +78,7 @@ export interface MaestroTarget {
   has_project?: boolean;
   tests?: TargetTest[];
   candidates?: TestCandidate[];
+  pending_edits?: PendingEdit[];   // chat-queued test changes awaiting the next run
   // repo Selenium→Playwright conversion (repo targets only)
   source_framework?: string;      // e.g. "Selenium (standalone)" — the detected original stack
   converted_branch?: string;      // e.g. "maestro/playwright" — pushed feature branch (empty if not pushed)
@@ -235,6 +251,12 @@ export class MaestroService {
 
   getRun(id: string): Observable<MaestroRun> {
     return this.http.get<MaestroRun>(`${this.apiBase}/autopilot/runs/${id}`);
+  }
+
+  /** Maestro chat: send the conversation, get the assistant reply + the (possibly-mutated) target. */
+  chat(targetId: string, messages: ChatMessage[]): Observable<{ reply: string; target: MaestroTarget }> {
+    return this.http.post<{ reply: string; target: MaestroTarget }>(
+      `${this.apiBase}/autopilot/chat`, { target_id: targetId, messages });
   }
 
   captureUrl(runId: string, filename: string): string {

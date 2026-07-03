@@ -26,6 +26,62 @@
     </div>
   </header>
 
+  <!-- queued chat changes awaiting the next run -->
+  @if (pendingEdits.length) {
+    <div class="pending-bar">
+      <span class="pb-count">{{ pendingEdits.length }} queued change{{ pendingEdits.length > 1 ? 's' : '' }}</span>
+      <span class="pb-chips">
+        @for (p of pendingEdits; track p.id) {
+          <span class="pb-chip {{ p.action }}" [title]="p.details">{{ pendingIcon(p.action) }} {{ p.details }}</span>
+        }
+      </span>
+      <span class="pb-note">Start a run to apply.</span>
+    </div>
+  }
+
+  <!-- chat: curate the suite in plain language -->
+  <section class="card chat">
+    <div class="h-row">
+      <h2>💬 Chat</h2>
+      <span class="count">applies on next run</span>
+    </div>
+    <p class="hint">Ask about your tests, or tell Maestro to add / edit / remove a test or change
+      settings — in plain language. Changes are queued and applied the next time the suite runs.</p>
+
+    <div class="chat-log" #chatLog>
+      @if (!chatMsgs.length) {
+        <div class="chat-empty">
+          <p class="muted sm">Try one of these:</p>
+          <div class="chips">
+            @for (s of chatSuggestions; track s) {
+              <button class="chip" [disabled]="chatBusy" (click)="sendChat(s)">{{ s }}</button>
+            }
+          </div>
+        </div>
+      }
+      @for (m of chatMsgs; track $index) {
+        <div class="msg {{ m.role }}">
+          @if (m.role === 'assistant') { <span class="avatar">✦</span> }
+          <div class="bubble">{{ m.content }}</div>
+        </div>
+      }
+      @if (chatBusy) {
+        <div class="msg assistant">
+          <span class="avatar">✦</span>
+          <div class="bubble typing"><i></i><i></i><i></i></div>
+        </div>
+      }
+    </div>
+
+    @if (chatError) { <div class="chat-err">{{ chatError }}</div> }
+
+    <div class="chat-input">
+      <textarea rows="1" [(ngModel)]="chatInput" (keydown)="onChatKey($event)" [disabled]="chatBusy"
+        placeholder="Ask to add / edit / remove a test, or change settings…  (Enter to send)"></textarea>
+      <button class="btn primary" [disabled]="chatBusy || !chatInput.trim()" (click)="sendChat()">Send</button>
+    </div>
+  </section>
+
   <!-- repo conversion (Selenium/other → standard Playwright, on a dedicated branch) -->
   @if (target.kind === 'repo' && (target.converted_branch || target.source_framework)) {
     <section class="card conv">
