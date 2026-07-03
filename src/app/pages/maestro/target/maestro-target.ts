@@ -34,6 +34,7 @@ export class MaestroTargetComponent implements OnInit, AfterViewChecked {
 
   // ── chat ────────────────────────────────────────────────────────────────────
   @ViewChild('chatLog') private chatLog?: ElementRef<HTMLElement>;
+  chatOpen = false;
   chatMsgs: ChatMessage[] = [];
   chatInput = '';
   chatBusy = false;
@@ -97,6 +98,11 @@ export class MaestroTargetComponent implements OnInit, AfterViewChecked {
 
   // ── chat ────────────────────────────────────────────────────────────────────
   get pendingEdits(): PendingEdit[] { return this.target?.pending_edits ?? []; }
+
+  toggleChat(): void {
+    this.chatOpen = !this.chatOpen;
+    if (this.chatOpen) { this.chatShouldScroll = true; }
+  }
 
   pendingIcon(a: string): string { return a === 'add' ? '＋' : a === 'delete' ? '－' : '✎'; }
 
